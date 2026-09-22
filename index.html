@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Orator</title>
+<meta name="theme-color" content="#F2EADA">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+:root {
+  --paper: #F2EADA; --panel: #E8DEC9; --ink: #1F1A14; --faint: rgba(31,26,20,.28);
+  --soft: rgba(31,26,20,.55); --line: rgba(31,26,20,.12);
+  --accent: #1E4634; --mark: #6C2130;
+  --serif: "Hoefler Text", "Iowan Old Style", Georgia, "Hiragino Mincho ProN", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Helvetica Neue", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); }
+body { -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+button:disabled { opacity: .35; cursor: default; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 16px 16px 120px; }
+h1 { font-size: 34px; margin: 24px 4px 16px; }
+.caps { font-size: 10px; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; color: var(--soft); }
+.card { background: color-mix(in srgb, var(--panel) 70%, transparent); border-radius: 14px; }
+.row { display: flex; align-items: center; gap: 12px; }
+.muted { color: var(--soft); }
+.serif { font-family: var(--serif); }
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 9px; border-radius: 999px;
+  border: 1px solid currentColor; color: var(--accent); }
+.btn { padding: 7px 14px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent); font-weight: 600; }
+.btn.mark { background: color-mix(in srgb, var(--mark) 12%, transparent); color: var(--mark); }
+.btn.solid { background: var(--accent); color: var(--paper); }
+a { color: var(--accent); }
+
+/* Stats card */
+.stats { display: flex; padding: 14px 0; margin-bottom: 14px; }
+.stats > button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.stats .sep { width: 1px; background: var(--line); margin: 4px 0; }
+.num { font-family: var(--serif); font-size: 30px; line-height: 1; }
+.unit { font-family: var(--serif); font-size: 12px; color: var(--soft); margin-left: 4px; }
+
+/* Lists */
+.list { border-radius: 14px; overflow: hidden; }
+.item { display: block; width: 100%; text-align: left; padding: 14px 18px; background: color-mix(in srgb, var(--panel) 55%, transparent);
+  border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: 0; }
+.item:hover { background: color-mix(in srgb, var(--panel) 85%, transparent); }
+.speaker { font-size: 11px; font-weight: 600; letter-spacing: .12em; color: var(--mark); }
+.stitle { font-family: var(--serif); font-size: 22px; margin: 2px 0; }
+.back { color: var(--accent); font-weight: 600; margin: 12px 4px; display: inline-block; }
+
+/* Player */
+#player { position: fixed; inset: 0; background: var(--paper); display: none; flex-direction: column; z-index: 10; }
+#player.open { display: flex; }
+.ptop { display: flex; align-items: center; gap: 10px; padding: 10px 16px; max-width: 760px; width: 100%; margin: 0 auto; }
+.ptop .title { flex: 1; text-align: center; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.modes { display: flex; background: var(--panel); border-radius: 9px; padding: 2px; margin: 0 16px 6px; max-width: 728px; align-self: center; width: calc(100% - 32px); }
+.modes button { flex: 1; padding: 6px 0; font-size: 13px; border-radius: 7px; }
+.modes button.on { background: var(--paper); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.passes { display: flex; justify-content: space-around; margin: 0 16px 6px; font-size: 11px; }
+.passes div { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
+.banner { display: flex; align-items: center; gap: 10px; padding: 8px 20px; background: color-mix(in srgb, var(--panel) 60%, transparent); }
+#stage { flex: 1; overflow-y: auto; }
+.stage-in { max-width: 760px; margin: 0 auto; padding: 20px 20px 45vh; }
+.sent { padding: 9px 0; cursor: pointer; }
+.sent .en { font-family: var(--serif); font-size: 19px; line-height: 1.45; color: var(--faint); }
+.sent .ja { font-size: 14px; line-height: 1.6; color: var(--faint); margin-top: 4px; }
+.sent.cur .en { color: var(--ink); }
+.sent.cur .ja { color: color-mix(in srgb, var(--ink) 75%, transparent); }
+.sent .who { font-size: 10px; font-weight: 600; letter-spacing: .12em; color: color-mix(in srgb, var(--mark) 50%, transparent); margin: 10px 0 4px; }
+.sent.cur .who { color: var(--mark); }
+.sent .meta { display: flex; gap: 8px; margin-top: 6px; align-items: center; }
+.sent .meta .chip { color: #888; }
+.sent.cur .meta .chip { color: var(--accent); }
+.blank { color: var(--mark); }
+.flag { color: var(--mark); }
+.intro { padding: 14px; margin-bottom: 16px; cursor: pointer; }
+.center { text-align: center; padding-top: 16vh; }
+.big-ja { font-size: 20px; line-height: 1.7; }
+.big-en { font-family: var(--serif); font-size: 21px; line-height: 1.5; }
+.controls { background: var(--panel); padding: 10px 20px calc(10px + env(safe-area-inset-bottom)); }
+.controls-in { max-width: 720px; margin: 0 auto; }
+.seek { width: 100%; accent-color: var(--accent); }
+.times { display: flex; justify-content: space-between; font-size: 11px; color: var(--soft); font-variant-numeric: tabular-nums; }
+.transport { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+.transport button { font-size: 22px; width: 48px; height: 48px; display: grid; place-items: center; }
+.transport .play { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); color: var(--paper); font-size: 26px; }
+.rate { font-size: 14px !important; font-weight: 700; }
+.on-accent { color: var(--accent); }
+.dim { color: var(--faint); }
+
+/* Sheets */
+#sheet { position: fixed; inset: 0; background: rgba(0,0,0,.25); display: none; z-index: 20; align-items: flex-end; justify-content: center; }
+#sheet.open { display: flex; }
+#sheet .body { background: var(--paper); width: 100%; max-width: 760px; max-height: 80vh; overflow-y: auto;
+  border-radius: 16px 16px 0 0; padding: 20px 20px 40px; }
+.sec { margin: 16px 0 6px; font-size: 13px; font-weight: 700; color: var(--soft); }
+
+/* History */
+.duel { padding: 16px 8px; text-align: center; margin-bottom: 14px; }
+.triple { display: flex; align-items: flex-end; }
+.triple > div { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.verdict { font-family: var(--serif); font-weight: 600; margin-top: 12px; }
+.cal { padding: 14px; margin-bottom: 14px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 10px; }
+.cal-grid .dow { font-size: 11px; color: var(--soft); text-align: center; }
+.cal-grid .d { min-height: 42px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 11px; background: var(--paper); cursor: pointer; }
+.cal-grid .d b { font-size: 11px; font-variant-numeric: tabular-nums; }
+.cal-grid .d.today { outline: 1.5px solid var(--mark); }
+.rank { padding: 14px; }
+.rank .r { display: flex; padding: 7px 10px; border-radius: 8px; font-variant-numeric: tabular-nums; }
+.rank .r.me { background: color-mix(in srgb, var(--accent) 15%, transparent); }
+.rank .r .n { width: 28px; font-family: var(--serif); }
+
+/* Setup */
+.setup { max-width: 520px; margin: 12vh auto; padding: 24px; }
+.setup input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: #fffaf0; font: inherit; margin: 6px 0 14px; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: var(--paper);
+  padding: 8px 14px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity .2s; z-index: 30; pointer-events: none; }
+.toast.show { opacity: .92; }
+.kbd { font-size: 11px; color: var(--soft); margin-top: 18px; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="player"></div>
+<div id="sheet"><div class="body"></div></div>
+<div class="toast" id="toast"></div>
+<audio id="audio" preload="auto"></audio>
+<script>
+"use strict";
+/*
+ * Orator for the web — same content and practice log as the iPhone app.
+ * Content: private repo kanjicuu/orator-data (index.json, <speech>/speech.json, <speech>/NN.m4a),
+ * read through the GitHub contents API with a token kept in this browser only.
+ * Practice log: orator.json in kanjicuu/screen-memo-data, merged with the same rules as
+ * App/Journal.swift (latest `at` wins for marks/passes/relisten; each device owns its listening row).
+ */
+const CONTENT_REPO = "kanjicuu/orator-data";
+const LOG_REPO = "kanjicuu/screen-memo-data";
+const INTERVALS = [1, 3, 7, 16, 35, 80];
+const MODES = [["none", "なし"], ["english", "英"], ["both", "英日"], ["cloze", "穴埋め"], ["japaneseFirst", "日→英"]];
+const PASS_MODES = ["none", "english", "both", "none"];
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const clock = t => { t = Math.max(0, Math.floor(t)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; };
+const today = () => dayStr(new Date());
+function dayStr(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
+function dayAfter(n, from) { const d = from ? new Date(from) : new Date(); d.setDate(d.getDate() + n); return dayStr(d); }
+function parseDay(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 1600); }
+
+// ---------- GitHub ----------
+// Local test: http://localhost:…/?local reads content from ../publish and skips log sync.
+const LOCAL = location.hostname === "localhost" && new URLSearchParams(location.search).has("local");
+const token = () => LOCAL ? "local" : store.get("token", "");
+async function gh(repo, path, opts = {}) {
+  if (LOCAL) return repo === CONTENT_REPO ? fetch("../publish/" + path, { cache: "no-store" }) : new Response("", { status: 503 });
+  const r = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+    method: opts.method || "GET",
+    headers: { Authorization: `Bearer ${token()}`, Accept: opts.raw ? "application/vnd.github.raw" : "application/vnd.github+json",
+               ...(opts.body ? { "Content-Type": "application/json" } : {}) },
+    body: opts.body ? JSON.stringify(opts.body) : undefined, cache: "no-store",
+  });
+  return r;
+}
+function b64utf8(str) { const bytes = new TextEncoder().encode(str); let bin = ""; for (const b of bytes) bin += String.fromCharCode(b); return btoa(bin); }
+function utf8b64(b64) { const bin = atob(b64.replace(/\s/g, "")); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); }
+
+// ---------- Content ----------
+let speeches = [];
+async function loadContent() {
+  const cache = await caches.open("orator-json").catch(() => null);
+  async function json(path) {
+    try {
+      const r = await gh(CONTENT_REPO, path, { raw: true });
+      if (!r.ok) throw new Error(r.status);
+      const text = await r.text();
+      cache?.put("/" + path, new Response(text));
+      return JSON.parse(text);
+    } catch (e) {  // offline: last copy
+      const hit = await cache?.match("/" + path);
+      if (hit) return JSON.parse(await hit.text());
+      throw e;
+    }
+  }
+  const index = await json("index.json");
+  const list = await Promise.all(index.speeches.map(async id => ({ ...(await json(`${id}/speech.json`)), folder: id })));
+  speeches = list.sort((a, b) => (a.order ?? 99) - (b.order ?? 99) || a.id.localeCompare(b.id));
+}
+const audioURLs = {};
+async function audioURL(speech, track) {
+  const path = `${speech.folder}/${track.file}`;
+  if (audioURLs[path]) return audioURLs[path];
+  const cache = await caches.open("orator-audio").catch(() => null);
+  const hit = await cache?.match("/" + path);
+  let blob = hit ? await hit.blob() : null;
+  if (!blob) {
+    toast("音声を読み込み中…");
+    const r = await gh(CONTENT_REPO, path, { raw: true });
+    if (!r.ok) throw new Error("audio " + r.status);
+    blob = await r.blob();
+    cache?.put("/" + path, new Response(blob, { headers: { "Content-Type": "audio/mp4" } }));
+  }
+  // Servers label .m4a variously (octet-stream from GitHub, mp4a-latm locally); browsers want audio/mp4.
+  return (audioURLs[path] = URL.createObjectURL(new Blob([blob], { type: "audio/mp4" })));
+}
+
+// ---------- Journal (same shape and merge as App/Journal.swift) ----------
+const device = () => "web-" + store.get("device", "mac");
+let J = store.get("journal", { updatedAt: "", marks: {}, listening: {}, passes: {}, relisten: {} });
+J.relisten ||= {};
+const nowISO = () => new Date().toISOString();
+function merged(a, b) {
+  const out = JSON.parse(JSON.stringify(a));
+  for (const [id, m] of Object.entries(b.marks || {})) if ((out.marks[id]?.at || "") < m.at) out.marks[id] = m;
+  for (const [id, p] of Object.entries(b.passes || {})) if ((out.passes[id]?.at || "") < p.at) out.passes[id] = p;
+  out.relisten ||= {};
+  for (const [id, r] of Object.entries(b.relisten || {})) if ((out.relisten[id]?.at || "") < r.at) out.relisten[id] = r;
+  for (const [dev, days] of Object.entries(b.listening || {})) {
+    if (dev === device()) continue;
+    out.listening[dev] ||= {};
+    for (const [d, s] of Object.entries(days)) out.listening[dev][d] = Math.max(s, out.listening[dev][d] || 0);
+  }
+  out.updatedAt = a.updatedAt > (b.updatedAt || "") ? a.updatedAt : b.updatedAt;
+  return out;
+}
+function saveJ(pushAfter) { J.updatedAt = nowISO(); store.set("journal", J); if (pushAfter != null) schedulePush(pushAfter); }
+let pushTimer;
+function schedulePush(sec) { clearTimeout(pushTimer); pushTimer = setTimeout(syncNow, sec * 1000); }
+async function syncNow() {
+  if (!token()) return;
+  for (let k = 0; k < 3; k++) {
+    try {
+      const r = await gh(LOG_REPO, "orator.json");
+      let remote = { marks: {}, listening: {}, passes: {}, relisten: {} }, sha;
+      if (r.status === 200) { const o = await r.json(); sha = o.sha; remote = JSON.parse(utf8b64(o.content)); }
+      else if (r.status !== 404) return;
+      J = merged(J, remote);
+      store.set("journal", J);
+      const body = { message: `Orator: practice log (${device()})`, content: b64utf8(JSON.stringify(sortKeys(J), null, 2) + "\n") };
+      if (sha) body.sha = sha;
+      const w = await gh(LOG_REPO, "orator.json", { method: "PUT", body });
+      if (w.ok) { render(); return; }
+      if (w.status !== 409 && w.status !== 422) return;
+    } catch { return; }
+  }
+}
+function sortKeys(o) { if (Array.isArray(o) || o === null || typeof o !== "object") return o;
+  return Object.fromEntries(Object.keys(o).sort().map(k => [k, sortKeys(o[k])])); }
+
+const markId = (track, i) => `${track.id}#${i}`;
+const marks = () => Object.values(J.marks).filter(m => !m.removed).sort((a, b) => a.track.localeCompare(b.track) || a.i - b.i);
+const isMarked = (track, i) => { const m = J.marks[markId(track, i)]; return !!m && !m.removed; };
+const dueMarks = () => marks().filter(m => (m.due || dayAfter(0, m.at)) <= today());
+function toggleMark(track, i) {
+  const id = markId(track, i), s = track.sentences[i];
+  if (isMarked(track, i)) { J.marks[id].removed = true; J.marks[id].at = nowISO(); toast("🚩 を外しました"); }
+  else { J.marks[id] = { track: track.id, i, t: s.t, en: s.en, ja: s.ja, at: nowISO() }; toast("🚩 聴き取れなかった"); }
+  saveJ(3);
+}
+function grade(m, caught) {
+  const cur = J.marks[m.id || markId({ id: m.track }, m.i)];
+  if (!cur) return;
+  const step = caught ? Math.min((cur.step ?? -1) + 1, INTERVALS.length - 1) : 0;
+  Object.assign(cur, { step, due: dayAfter(caught ? INTERVALS[step] : 1), at: nowISO() });
+  saveJ(3);
+}
+const passes = track => J.passes[track.id]?.n || 0;
+function setPasses(track, n) { J.passes[track.id] = { n, at: nowISO() }; saveJ(3); }
+function finished(track) {
+  const r = J.relisten[track.id] || { step: -1, due: "", at: "" };
+  if (r.due > today()) return;
+  r.step = Math.min(r.step + 1, INTERVALS.length - 1); r.due = dayAfter(INTERVALS[r.step]); r.at = nowISO();
+  J.relisten[track.id] = r; saveJ(3);
+}
+const relistenDue = track => { const r = J.relisten[track.id]; return !!r && r.due <= today(); };
+let pendingSec = 0;
+function addListening(sec) {
+  pendingSec += sec; if (pendingSec < 5) return;
+  const d = device(), t = today();
+  J.listening[d] ||= {}; J.listening[d][t] = (J.listening[d][t] || 0) + Math.floor(pendingSec);
+  pendingSec %= 1; saveJ(null);
+}
+function dailyMinutes() {
+  const out = {};
+  for (const days of Object.values(J.listening)) for (const [d, s] of Object.entries(days)) out[d] = (out[d] || 0) + s;
+  for (const d in out) { out[d] = Math.floor(out[d] / 60); if (!out[d]) delete out[d]; }
+  return out;
+}
+const todayMinutes = () => dailyMinutes()[today()] || 0;
+
+// ---------- Player state ----------
+const A = $("#audio");
+const P = {
+  speech: null, trackIndex: 0, i: 0, hold: null, loop: null, armed: null,
+  mode: store.get("mode", "both"), shadowing: store.get("shadowing", false), fourPass: store.get("fourPass", false),
+  rate: store.get("rate", 1), repeatSentence: false,
+  review: null, reviewPos: 0, reviewRepeats: store.get("reviewRepeats", 2), reviewPlayed: 0,
+  resumeTimer: null, lastTick: 0,
+  get track() { return this.speech?.tracks[this.trackIndex]; },
+  get effMode() { return this.fourPass && this.track ? PASS_MODES[Math.min(passes(this.track), 3)] : this.mode; },
+};
+const holdsAtBoundary = () => !P.review && (P.shadowing || P.effMode === "japaneseFirst");
+function clearHold() { clearTimeout(P.resumeTimer); P.resumeTimer = null; P.hold = null; }
+function armBoundary() { P.armed = holdsAtBoundary() ? P.i : null; }
+function findIndex(t) { const s = P.track.sentences; let lo = 0, hi = s.length - 1, f = 0;
+  while (lo <= hi) { const mid = (lo + hi) >> 1; if (s[mid].t <= t + 0.05) { f = mid; lo = mid + 1; } else hi = mid - 1; } return f; }
+function endOf(i) { const s = P.track.sentences; return i + 1 < s.length ? s[i + 1].t : P.track.duration; }
+
+async function openTrack(speech, index, play = true, at = null) {
+  savePos();
+  P.speech = speech; P.trackIndex = index; clearHold(); P.loop = null; P.repeatSentence = false;
+  const t = P.track;
+  store.set("last", t.id);
+  try { A.src = await audioURL(speech, t); } catch (e) { toast("音声を読み込めませんでした（トークンを確認）"); return; }
+  A.playbackRate = P.rate;
+  await new Promise(r => { if (A.readyState >= 1) r(); else A.addEventListener("loadedmetadata", r, { once: true }); });
+  const resume = store.get("pos." + t.id, 0);
+  A.currentTime = at ?? (resume < t.duration - 3 ? resume : 0);
+  P.i = findIndex(A.currentTime); armBoundary();
+  renderPlayer(true);
+  if (play) doPlay();
+}
+function doPlay() { clearHold(); A.play().catch(() => {}); A.playbackRate = P.rate; P.lastTick = performance.now(); loop(); renderControls(); }
+function doPause() { clearHold(); A.pause(); savePos(); schedulePush(0); renderControls(); }
+function toggle() { if (P.hold === "grade") return replayReview(); if (P.hold === "prompt") return doPlay(); A.paused ? doPlay() : doPause(); }
+function seek(t) { if (!P.track) return; clearHold(); A.currentTime = Math.min(Math.max(0, t), P.track.duration);
+  P.i = findIndex(A.currentTime); if (P.repeatSentence) P.loop = P.i; armBoundary(); renderPlayer(false); }
+const seekSentence = i => { if (P.track?.sentences[i]) seek(P.track.sentences[i].t); };
+function prevSentence() { if (P.review) return stepReview(-1); const st = P.track.sentences[P.i].t;
+  seekSentence(A.currentTime - st < 1.5 ? Math.max(0, P.i - 1) : P.i); }
+function nextSentence() { if (P.review) return stepReview(1); if (P.hold === "prompt") return doPlay();
+  if (P.i + 1 < P.track.sentences.length) seekSentence(P.i + 1); else nextTrack(); }
+function nextTrack() { if (P.trackIndex + 1 < P.speech.tracks.length) openTrack(P.speech, P.trackIndex + 1, !A.paused, 0); }
+function flagCurrent() { if (!P.track) return; let i = P.i; if (i > 0 && A.currentTime - P.track.sentences[i].t < 1) i--; toggleMark(P.track, i); renderPlayer(false); }
+function savePos() { if (!P.track) return; store.set("pos." + P.track.id, A.currentTime);
+  if (A.currentTime > P.track.duration - 5) store.set("done." + P.track.id, true); }
+
+function loop() {
+  cancelAnimationFrame(P.raf);
+  const step = () => {
+    if (!P.track) return;
+    const now = performance.now();
+    if (!A.paused) addListening((now - P.lastTick) / 1000);
+    P.lastTick = now;
+    if (P.loop != null && A.currentTime >= endOf(P.loop) - 0.05) A.currentTime = P.track.sentences[P.loop].t;
+    if (P.review && !P.hold && !A.paused) {
+      const m = P.review[P.reviewPos];
+      if (findIndex(A.currentTime) !== m.i || A.currentTime >= endOf(m.i) - 0.05) { A.pause(); reviewEnded(); }
+    }
+    if (holdsAtBoundary() && P.loop == null && P.armed === P.i && P.i + 1 < P.track.sentences.length && !A.paused) {
+      const next = P.track.sentences[P.i + 1].t;
+      if (A.currentTime >= next - 0.04) {
+        A.pause(); A.currentTime = next; P.armed = null; P.i = P.i + 1;
+        if (P.effMode === "japaneseFirst") { P.hold = "prompt"; }
+        else {
+          P.hold = "shadow";
+          const len = (next - P.track.sentences[P.i - 1].t) / P.rate;
+          P.resumeTimer = setTimeout(() => { if (P.hold !== "shadow") return; P.hold = null; A.play(); armBoundary(); renderPlayer(false); }, len * 1000 + 300);
+        }
+        renderPlayer(false);
+      }
+    }
+    const i = findIndex(A.currentTime);
+    if (i !== P.i && !P.hold) { P.i = i; armBoundary(); renderPlayer(false); }
+    if (Math.abs(A.currentTime - (P.lastSaved || 0)) > 3) { savePos(); P.lastSaved = A.currentTime; }
+    updateTime();
+    P.raf = requestAnimationFrame(step);
+  };
+  P.raf = requestAnimationFrame(step);
+}
+A.addEventListener("ended", () => {
+  if (P.review) return reviewEnded();
+  const t = P.track; store.set("pos." + t.id, 0); store.set("done." + t.id, true); finished(t);
+  if (P.fourPass) { const n = Math.min(4, passes(t) + 1); setPasses(t, n); if (n < 4) return openTrack(P.speech, P.trackIndex, true, 0); }
+  if (P.trackIndex + 1 < P.speech.tracks.length) openTrack(P.speech, P.trackIndex + 1, true, 0); else { schedulePush(0); renderControls(); }
+});
+
+// Review
+async function startReview(list) {
+  if (!list.length) return;
+  P.review = list; P.reviewPos = 0; await playReviewItem();
+}
+function stopReview() { P.review = null; clearHold(); doPause(); renderPlayer(true); }
+async function playReviewItem(keep = false) {
+  const m = P.review[P.reviewPos];
+  for (const s of speeches) {
+    const k = s.tracks.findIndex(t => t.id === m.track);
+    if (k < 0) continue;
+    if (P.speech !== s || P.trackIndex !== k) await openTrack(s, k, false);
+    openPlayer();
+    if (!keep) P.reviewPlayed = 0;
+    seekSentence(m.i); doPlay(); renderPlayer(true); return;
+  }
+  stepReview(1);
+}
+function stepReview(d) { const n = P.reviewPos + d; if (!P.review[n]) { if (d > 0) stopReview(); return; } P.reviewPos = n; playReviewItem(); }
+function reviewEnded() {
+  P.reviewPlayed++;
+  const m = P.review[P.reviewPos];
+  if (P.reviewPlayed >= P.reviewRepeats) { P.hold = "grade"; renderPlayer(false); return; }
+  const again = () => { if (!P.review) return; P.hold = null; seekSentence(m.i); A.play(); renderPlayer(false); };
+  if (!P.shadowing) return again();
+  P.hold = "shadow"; renderPlayer(false);
+  P.resumeTimer = setTimeout(again, ((endOf(m.i) - P.track.sentences[m.i].t) / P.rate) * 1000 + 300);
+}
+function gradeReview(caught) {
+  grade({ ...P.review[P.reviewPos], id: `${P.review[P.reviewPos].track}#${P.review[P.reviewPos].i}` }, caught);
+  if (P.reviewPos + 1 < P.review.length) { P.reviewPos++; playReviewItem(); } else { stopReview(); toast("今日の復習おわり"); }
+}
+function replayReview() { P.reviewPlayed = Math.max(0, P.reviewRepeats - 1); playReviewItem(true); }
+
+// ---------- Views ----------
+let route = location.hash || "#/";
+window.addEventListener("hashchange", () => { route = location.hash || "#/"; render(); });
+function render() {
+  const app = $("#app");
+  if (!token()) return renderSetup(app);
+  if (!speeches.length) { app.innerHTML = `<div class="wrap"><h1>Orator</h1><p class="muted">読み込み中…</p></div>`; return; }
+  const m = route.match(/^#\/s\/(.+)$/);
+  app.innerHTML = m ? speechView(decodeURIComponent(m[1])) : libraryView();
+}
+function renderSetup(app) {
+  app.innerHTML = `<div class="setup card">
+    <h2 class="serif" style="margin-top:0">Orator</h2>
+    <p class="muted" style="font-size:14px;line-height:1.7">音声と記録は非公開のGitHubリポジトリにあります。このブラウザで一度だけ、読み書きできるトークン（github_pat_…）を貼り付けてください。トークンはこのブラウザの中にだけ保存されます。</p>
+    <label class="caps">GitHub token</label><input id="tk" type="password" placeholder="github_pat_…">
+    <label class="caps">この端末の名前</label><input id="dv" placeholder="M5 / M2" value="${esc(store.get("device", ""))}">
+    <button class="btn solid" id="save">はじめる</button></div>`;
+  $("#save").onclick = async () => {
+    const tk = $("#tk").value.trim(), dv = $("#dv").value.trim() || "mac";
+    if (!tk) return;
+    store.set("token", tk); store.set("device", dv.replace(/\s+/g, "-"));
+    const r = await gh(CONTENT_REPO, "index.json");
+    if (!r.ok) { store.set("token", ""); toast(`読めませんでした（${r.status}）。トークンに orator-data の権限があるか確認`); return render(); }
+    boot();
+  };
+}
+function statsCard() {
+  return `<div class="card stats">
+    <button onclick="openHistory()"><span class="caps">📅 TODAY</span><span><span class="num">${todayMinutes()}</span><span class="unit">min</span></span></button>
+    <div class="sep"></div>
+    <button onclick="openReview()"><span class="caps"><span class="flag">⚑</span> REVIEW TODAY</span><span><span class="num">${dueMarks().length}</span><span class="unit">sentences</span></span></button>
+  </div>`;
+}
+function libraryView() {
+  return `<div class="wrap"><h1>Orator</h1>${statsCard()}<div class="list">${speeches.map(s => {
+    const total = s.tracks.reduce((a, t) => a + t.duration, 0);
+    const done = s.tracks.filter(t => store.get("done." + t.id, false)).length;
+    return `<a class="item" href="#/s/${encodeURIComponent(s.id)}" style="text-decoration:none;color:inherit">
+      ${s.speaker ? `<div class="speaker">${esc(s.speaker.toUpperCase())}</div>` : ""}
+      <div class="stitle" style="color:${P.speech === s ? "var(--mark)" : "inherit"}">${esc(s.title)}</div>
+      ${s.titleJa ? `<div style="font-size:15px;color:var(--soft)">${esc(s.titleJa)}</div>` : ""}
+      <div class="muted" style="font-size:12px;margin-top:3px">${s.tracks.length}トラック · ${Math.floor(total / 60)}分${done ? ` · ${done}/${s.tracks.length} 済` : ""}</div></a>`;
+  }).join("")}</div>
+  <div class="kbd">キー操作：Space 再生/停止 · ←→ 前/次の文 · ↑↓ 表示切替 · F 🚩 · R 1文リピート · 復習中 1=まだ 2=聴けた · Esc 閉じる</div>
+  <div class="kbd"><button onclick="resetToken()" style="text-decoration:underline">トークンを入れ直す</button> · 端末名: ${esc(store.get("device", "mac"))}</div></div>`;
+}
+function speechView(id) {
+  const s = speeches.find(x => x.id === id);
+  if (!s) return `<div class="wrap"><a class="back" href="#/">‹ Orator</a></div>`;
+  return `<div class="wrap"><a class="back" href="#/">‹ Orator</a>
+    <h2 class="serif" style="margin:6px 4px 2px">${esc(s.title)}</h2><div class="muted" style="margin:0 4px 14px;font-size:13px">${esc(s.subtitle)}</div>
+    <div class="list">${s.tracks.map((t, k) => {
+      const cur = P.track?.id === t.id, prog = store.get("done." + t.id, false) ? 1 : store.get("pos." + t.id, 0) / t.duration;
+      return `<button class="item row" onclick="pickTrack('${esc(s.id)}',${k})">
+        <span style="font-family:ui-monospace,monospace;color:${cur ? "var(--mark)" : "var(--soft)"}">${String(k + 1).padStart(2, "0")}</span>
+        <span style="flex:1"><div style="font-weight:${cur ? 600 : 400}">${esc(t.title)}</div><div class="muted" style="font-size:12px">${esc(t.titleJa)}</div>
+        ${relistenDue(t) ? `<div style="font-size:11px;font-weight:600;color:var(--mark)">聴き直しどき</div>` : ""}</span>
+        <span class="muted" style="font-size:12px;text-align:right">${clock(t.duration)}<br>${P.fourPass ? "●".repeat(passes(t)) + "○".repeat(4 - passes(t)) : prog >= 1 ? "✓" : prog > 0.01 ? Math.round(prog * 100) + "%" : ""}</span>
+      </button>`; }).join("")}</div></div>`;
+}
+function pickTrack(id, k) { const s = speeches.find(x => x.id === id); if (P.track?.id !== s.tracks[k].id) openTrack(s, k, true); openPlayer(); }
+function resetToken() { store.set("token", ""); render(); }
+
+// Player view
+function openPlayer() { $("#player").classList.add("open"); renderPlayer(true); }
+function closePlayer() { $("#player").classList.remove("open"); render(); }
+function renderPlayer(scroll) {
+  const el = $("#player"); if (!P.track) return;
+  const t = P.track, mode = P.effMode;
+  const top = `<div class="ptop"><button class="btn" onclick="closePlayer()">⌄ 閉じる</button><div class="title">${esc(t.title)}</div>
+    ${t.intro ? `<button class="btn" onclick="showIntro()">背景</button>` : ""}<button class="btn" onclick="showSettings()">設定</button></div>`;
+  const picker = P.fourPass
+    ? `<div class="passes">${PASS_MODES.map((m, k) => `<div><span style="font-weight:${k === Math.min(passes(t), 3) ? 700 : 400}">${MODES.find(x => x[0] === m)[1]}</span>
+        <span class="dot" style="background:${k < passes(t) ? "var(--accent)" : k === Math.min(passes(t), 3) ? "var(--ink)" : "var(--faint)"}"></span></div>`).join("")}</div>`
+    : `<div class="modes">${MODES.map(([k, l]) => `<button class="${P.mode === k ? "on" : ""}" onclick="setMode('${k}')">${l}</button>`).join("")}</div>`;
+  const banner = P.review ? `<div class="banner"><b class="flag">⚑ 復習 ${P.reviewPos + 1} / ${P.review.length}</b><span class="muted" style="font-size:12px">各${P.reviewRepeats}回</span>
+    <span style="flex:1"></span><button class="btn mark" onclick="stopReview()">終了</button></div>` : "";
+  el.innerHTML = top + picker + banner + `<div id="stage"><div class="stage-in">${stageHTML(mode)}</div></div><div class="controls"><div class="controls-in" id="ctl"></div></div>`;
+  renderControls();
+  if (scroll !== undefined) scrollToCurrent(scroll);
+  bindSwipe($("#stage"));
+}
+function stageHTML(mode) {
+  const t = P.track, s = t.sentences[P.i];
+  if (P.review) {
+    const revealed = P.hold === "grade";
+    return revealed ? `<div class="muted" style="font-size:12px">${esc(t.titleJa)}</div>
+      <p class="big-en">${esc(s.en)}</p><p class="big-ja" style="color:var(--soft)">${esc(s.ja)}</p>${notesChip(P.i, false, true)}
+      <div class="row" style="margin-top:18px"><button class="btn mark" style="flex:1;padding:12px" onclick="gradeReview(false)">まだ（1）</button>
+      <button class="btn solid" style="flex:1;padding:12px" onclick="gradeReview(true)">聴けた（2）</button></div>
+      <p class="muted" style="font-size:11px">聴けた → 次は先に延びる ／ まだ → 明日もう一度</p>`
+      : `<div class="center"><div style="font-size:40px">👂</div><h3>字幕なしで聴き取る</h3><p class="muted">${P.hold === "shadow" ? "リピートの間" : "聴き終わると英文が出ます"}</p></div>`;
+  }
+  if (mode === "none") return `<div class="center"><div style="font-size:40px">👂</div><h3 class="serif">${esc(t.title)}</h3><p class="muted">${esc(t.titleJa)}</p>
+    <p class="muted" style="font-size:12px">${P.i + 1} / ${t.sentences.length} 文</p>${P.hold === "shadow" ? `<b class="on-accent">リピート</b>` : ""}</div>`;
+  if (mode === "japaneseFirst") {
+    const waiting = P.hold === "prompt" || A.paused;
+    return `<div class="muted" style="font-size:12px">${P.i + 1} / ${t.sentences.length}</div><p class="big-ja">${esc(s.ja)}</p>
+      ${waiting ? `<p class="on-accent">英語で言ってみてから ▶︎</p>` : `<p class="big-en">${esc(s.en)}</p>${notesChip(P.i, false, true)}`}`;
+  }
+  const intro = t.intro ? `<div class="card intro" onclick="showIntro()"><div class="on-accent" style="font-size:12px;font-weight:600">ⓘ 聴く前に</div>
+    <div style="font-size:14px;margin-top:4px">${esc(t.intro.summary)}</div><div class="muted" style="font-size:12px;margin-top:4px">${t.intro.context.map(c => esc(c.head)).join(" · ")}</div></div>` : "";
+  return intro + t.sentences.map((s, i) => {
+    const cur = i === P.i, whoChanged = i === 0 || t.sentences[i - 1].speaker !== s.speaker;
+    const en = mode === "cloze" && i >= P.i ? clozed(s) : esc(s.en);
+    return `<div class="sent${cur ? " cur" : ""}" id="s${i}" onclick="seekSentence(${i})" oncontextmenu="event.preventDefault();toggleMark(P.track,${i});renderPlayer(false)">
+      ${s.speaker && whoChanged ? `<div class="who">${esc(s.speaker.toUpperCase())}</div>` : ""}
+      <div class="en">${en}</div>${mode === "both" ? `<div class="ja">${esc(s.ja)}</div>` : ""}
+      <div class="meta">${notesChip(i, mode === "cloze" && i >= P.i)}${isMarked(t, i) ? `<span class="flag">⚑</span>` : ""}</div></div>`;
+  }).join("");
+}
+function notesChip(i, hide, accent) {
+  const n = P.track.sentences[i].notes; if (!n?.length) return "";
+  return `<button class="chip" style="${accent ? "color:var(--accent)" : ""}" onclick="event.stopPropagation();showNotes(${i})">📖 ${hide ? "解説" : esc(n.map(x => x.head).join(" · "))}</button>`;
+}
+const COMMON = new Set("because between believe another anything something everything everybody nothing without through himself themselves yourself therefore whatever whether however important different actually certain country countries people government question understand".split(" "));
+function clozeRanges(s) {
+  const out = [];
+  for (const n of s.notes || []) {
+    if (out.length >= 2) break;
+    const head = n.head.replace(/^[\p{P}]+|[\p{P}]+$/gu, "");
+    if (head.split(" ").length > 3) continue;
+    const k = s.en.toLowerCase().indexOf(head.toLowerCase());
+    if (k < 0 || out.some(([a, b]) => k < b && k + head.length > a)) continue;
+    out.push([k, k + head.length]);
+  }
+  if (!out.length) {
+    let best = null;
+    for (const m of s.en.matchAll(/[A-Za-z][A-Za-z'-]*/g)) {
+      const w = m[0];
+      if (w.length < 7 || COMMON.has(w.toLowerCase()) || /^[A-Z]/.test(w)) continue;
+      if (!best || w.length > best[1] - best[0]) best = [m.index, m.index + w.length];
+    }
+    if (best) out.push(best);
+  }
+  return out.sort((a, b) => a[0] - b[0]);
+}
+function clozed(s) {
+  let html = "", c = 0;
+  for (const [a, b] of clozeRanges(s)) { html += esc(s.en.slice(c, a)) + `<span class="blank">${"_".repeat(Math.max(4, b - a))}</span>`; c = b; }
+  return html + esc(s.en.slice(c));
+}
+function renderControls() {
+  const c = $("#ctl"); if (!c || !P.track) return;
+  const t = P.track, playing = !A.paused && P.hold !== "prompt";
+  c.innerHTML = `<div class="row" style="justify-content:space-between;margin-bottom:4px">
+      <span class="on-accent" style="font-size:12px;font-weight:600">${P.hold === "shadow" ? "リピートの間" : ""}</span>
+      ${P.review ? "" : `<button class="btn mark" style="font-size:13px;padding:4px 10px" onclick="flagCurrent()">${isMarked(t, P.i) ? "⚑" : "⚐"} 聴き取れなかった</button>`}</div>
+    <input type="range" class="seek" id="seek" min="0" max="${t.duration}" step="0.1" value="${A.currentTime}">
+    <div class="times"><span id="tcur">${clock(A.currentTime)}</span><span id="trem">-${clock(t.duration - A.currentTime)}</span></div>
+    <div class="transport">
+      <button class="rate" onclick="cycleRate()">${fmtRate(P.rate)}</button>
+      <button onclick="prevSentence()">⏮</button>
+      <button class="play" onclick="toggle()">${playing ? "❚❚" : "▶"}</button>
+      <button onclick="nextSentence()">⏭</button>
+      <button class="${P.repeatSentence ? "on-accent" : "dim"}" onclick="toggleRepeat()" title="1文リピート">🔂</button>
+    </div>`;
+  const sk = $("#seek");
+  sk.oninput = () => { $("#tcur").textContent = clock(+sk.value); };
+  sk.onchange = () => seek(+sk.value);
+}
+function updateTime() {
+  const sk = $("#seek"); if (!sk || !P.track || document.activeElement === sk) return;
+  sk.value = A.currentTime; $("#tcur").textContent = clock(A.currentTime); $("#trem").textContent = "-" + clock(P.track.duration - A.currentTime);
+}
+function scrollToCurrent(instant) {
+  const el = $("#s" + P.i), st = $("#stage"); if (!el || !st) return;
+  st.scrollTo({ top: el.offsetTop - st.clientHeight / 2 + el.clientHeight / 2, behavior: instant ? "auto" : "smooth" });
+}
+const origRender = renderPlayer;
+renderPlayer = function (scroll) {  // keep scroll smooth when only the current sentence moved
+  const st = $("#stage"), keep = st ? st.scrollTop : 0;
+  origRender(undefined);
+  const st2 = $("#stage"); if (st2) st2.scrollTop = keep;
+  if (scroll !== true) scrollToCurrent(false); else scrollToCurrent(true);
+};
+function fmtRate(r) { return (Math.round(r * 100) / 100).toString() + "×"; }
+function cycleRate() { const rs = [0.75, 0.85, 1, 1.15, 1.3]; P.rate = rs[(rs.indexOf(P.rate) + 1) % rs.length] || 1; A.playbackRate = P.rate; store.set("rate", P.rate); renderControls(); }
+function toggleRepeat() { P.repeatSentence = !P.repeatSentence; P.loop = P.repeatSentence ? P.i : null; renderControls(); }
+function setMode(k) { P.mode = k; store.set("mode", k); armBoundary(); renderPlayer(true); }
+function shiftMode(d) { if (P.fourPass) return; const k = MODES.findIndex(m => m[0] === P.mode); const n = Math.min(MODES.length - 1, Math.max(0, k + d)); if (n !== k) setMode(MODES[n][0]); }
+function bindSwipe(el) {
+  if (!el) return; let x0, y0;
+  el.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+  el.addEventListener("touchend", e => { const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy) * 2) shiftMode(dx < 0 ? 1 : -1); }, { passive: true });
+}
+
+// Sheets
+function sheet(html) { const s = $("#sheet"); $(".body", s).innerHTML = html; s.classList.add("open"); }
+$("#sheet").onclick = e => { if (e.target.id === "sheet") $("#sheet").classList.remove("open"); };
+const closeSheet = () => $("#sheet").classList.remove("open");
+function showNotes(i) { const s = P.track.sentences[i];
+  sheet(`<p class="big-en" style="margin-top:0">${esc(s.en)}</p><p class="muted">${esc(s.ja)}</p>${(s.notes || []).map(n => `<div class="sec">${esc(n.head)}</div><div style="font-size:14px;line-height:1.7">${esc(n.body)}</div>`).join("")}`); }
+function showIntro() { const t = P.track;
+  sheet(`<h3 style="margin-top:0">${esc(t.titleJa)}</h3><p style="font-size:14px;line-height:1.7">${esc(t.intro.summary)}</p>${t.intro.context.map(n => `<div class="sec">${esc(n.head)}</div><div style="font-size:14px;line-height:1.7">${esc(n.body)}</div>`).join("")}`); }
+function showSettings() {
+  sheet(`<h3 style="margin-top:0">設定</h3>
+    <label class="row" style="margin:12px 0"><input type="checkbox" ${P.shadowing ? "checked" : ""} onchange="P.shadowing=this.checked;store.set('shadowing',P.shadowing);armBoundary();renderPlayer(false)"> シャドーイング（文ごとに間を空ける）</label>
+    <label class="row" style="margin:12px 0"><input type="checkbox" ${P.fourPass ? "checked" : ""} onchange="P.fourPass=this.checked;store.set('fourPass',P.fourPass);renderPlayer(true)"> 4周モード（音→英→英日→音）</label>
+    ${P.fourPass ? `<button class="btn" onclick="setPasses(P.track,0);renderPlayer(true);closeSheet()">この曲の周回をリセット</button>` : ""}`);
+}
+function openReview() {
+  const all = marks(), due = dueMarks();
+  const groups = {};
+  for (const m of all) (groups[m.track] ||= []).push(m);
+  const title = id => { for (const s of speeches) { const k = s.tracks.findIndex(t => t.id === id); if (k >= 0) return `${s.title} · ${k + 1}. ${s.tracks[k].titleJa}`; } return id; };
+  sheet(`<h3 style="margin-top:0">聴き取れなかった文</h3>
+    ${all.length ? `<div class="row" style="flex-wrap:wrap;gap:8px">
+      <button class="btn solid" ${due.length ? "" : "disabled"} onclick="closeSheet();startReview(dueMarks())">▶ 今日の復習 ${due.length} 文</button>
+      <button class="btn" onclick="closeSheet();startReview(marks())">全部（${all.length} 文）</button>
+      <span class="muted" style="font-size:13px">1文あたり</span>
+      ${[1, 2, 3].map(n => `<button class="btn ${P.reviewRepeats === n ? "solid" : ""}" onclick="P.reviewRepeats=${n};store.set('reviewRepeats',${n});openReview()">${n}回</button>`).join("")}</div>
+      <p class="muted" style="font-size:12px;line-height:1.6">字幕なしで聴いてから英文を出し、「聴けた／まだ」を押します。聴けた文は 1→3→7→16→35 日後と間隔を広げて戻ってきます。</p>`
+      : `<p class="muted">聴き取れなかった文に ⚑ を付けると、ここに集まります（再生画面のボタン、文の右クリック、F キー）。</p>`}
+    ${Object.entries(groups).map(([id, ms]) => `<div class="sec">${esc(title(id))}</div>${ms.map(m => `<div class="row" style="padding:8px 0;border-bottom:1px solid var(--line)">
+      <div style="flex:1;cursor:pointer" onclick="closeSheet();jumpTo('${esc(m.track)}',${m.i})"><div class="serif" style="font-size:16px">${esc(m.en)}</div><div class="muted" style="font-size:12px">${esc(m.ja)}</div></div>
+      <button class="btn mark" style="font-size:12px" onclick="unmark('${esc(m.track)}',${m.i})">解除</button></div>`).join("")}`).join("")}`);
+}
+function unmark(track, i) { const m = J.marks[`${track}#${i}`]; if (m) { m.removed = true; m.at = nowISO(); saveJ(3); } openReview(); render(); }
+function jumpTo(trackId, i) { for (const s of speeches) { const k = s.tracks.findIndex(t => t.id === trackId);
+  if (k >= 0) { openTrack(s, k, true, s.tracks[k].sentences[i]?.t ?? 0); openPlayer(); return; } } }
+
+// History: Beat who I was
+let calMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+function weekKey(d) { const x = new Date(d); const w = (x.getDay() + 6) % 7; x.setDate(x.getDate() - w); return dayStr(x); }
+function openHistory() {
+  const daily = dailyMinutes(), weeks = {};
+  for (const [d, m] of Object.entries(daily)) { const k = weekKey(parseDay(d)); weeks[k] = (weeks[k] || 0) + m; }
+  const thisW = weekKey(new Date()), lastD = new Date(); lastD.setDate(lastD.getDate() - 7); const lastW = weekKey(lastD);
+  const th = weeks[thisW] || 0, la = weeks[lastW] || 0, best = Math.max(0, ...Object.entries(weeks).filter(([k]) => k !== thisW).map(([, v]) => v));
+  const verdict = th > best && best > 0 ? "自己ベスト更新中" : th > la ? `先週の自分に +${th - la}分 で勝っている` : la === 0 && th === 0 ? "今週の1分目から" : `先週の自分まで あと${la - th + 1}分`;
+  let streak = 0; const d = new Date(); if (!daily[dayStr(d)]) d.setDate(d.getDate() - 1);
+  while (daily[dayStr(d)]) { streak++; d.setDate(d.getDate() - 1); }
+  const bestDay = Object.entries(daily).sort((a, b) => b[1] - a[1])[0];
+  const total = Object.values(daily).reduce((a, b) => a + b, 0);
+  const shade = m => m <= 0 ? "var(--paper)" : `color-mix(in srgb, var(--accent) ${m < 10 ? 18 : m < 20 ? 35 : m < 30 ? 55 : m < 60 ? 80 : 100}%, var(--paper))`;
+  const y = calMonth.getFullYear(), mo = calMonth.getMonth(), nDays = new Date(y, mo + 1, 0).getDate(), lead = (calMonth.getDay() + 6) % 7;
+  let cells = "", mTotal = 0;
+  for (let k = 0; k < lead; k++) cells += "<div></div>";
+  for (let k = 1; k <= nDays; k++) { const key = dayStr(new Date(y, mo, k)), m = daily[key] || 0; mTotal += m;
+    cells += `<div class="d${key === today() ? " today" : ""}" style="background:${shade(m)};color:${m >= 30 ? "var(--paper)" : "var(--ink)"}" title="${key} ${m}分">${k}${m ? `<b>${m}</b>` : ""}</div>`; }
+  const ranked = Object.entries(weeks).sort((a, b) => b[1] - a[1] || b[0].localeCompare(a[0]));
+  const rank = ranked.findIndex(([k]) => k === thisW) + 1 || ranked.length + 1;
+  const md = s => { const x = parseDay(s); return `${x.getMonth() + 1}/${x.getDate()}`; };
+  const isNow = y === new Date().getFullYear() && mo === new Date().getMonth();
+  sheet(`<h3 class="serif" style="margin-top:0;text-align:center">Beat who I was</h3>
+    <div class="card duel"><div class="triple">
+      <div><span class="caps">This week</span><span><span class="num" style="font-size:34px">${th}</span><span class="unit">min</span></span></div>
+      <div><span class="caps">Last week</span><span><span class="num" style="font-size:24px">${la}</span><span class="unit">min</span></span></div>
+      <div><span class="caps">Best week</span><span><span class="num" style="font-size:24px">${best}</span><span class="unit">min</span></span></div></div>
+      <div class="verdict" style="color:${th > la ? "var(--accent)" : "var(--mark)"}">${verdict}</div></div>
+    <div class="card duel"><div class="triple">
+      <div><span class="caps">Streak</span><span><span class="num" style="font-size:24px">${streak}</span><span class="unit">days</span></span></div>
+      <div><span class="caps">Best day</span><span><span class="num" style="font-size:24px">${bestDay?.[1] || 0}</span><span class="unit">${bestDay ? md(bestDay[0]) : "min"}</span></span></div>
+      <div><span class="caps">Total</span><span><span class="num" style="font-size:24px">${Math.floor(total / 60)}</span><span class="unit">hours</span></span></div></div></div>
+    <div class="card cal"><div class="row" style="justify-content:space-between">
+      <button class="btn" onclick="calMonth=new Date(${y},${mo - 1},1);openHistory()">‹</button>
+      <b class="serif">${y}年${mo + 1}月 <span class="muted" style="font-weight:400;font-size:12px">${mTotal}分</span></b>
+      <button class="btn" ${isNow ? "disabled" : ""} onclick="calMonth=new Date(${y},${mo + 1},1);openHistory()">›</button></div>
+      <div class="cal-grid">${"月火水木金土日".split("").map(w => `<div class="dow">${w}</div>`).join("")}${cells}</div></div>
+    <div class="card rank"><div class="row" style="justify-content:space-between"><span class="caps">Weekly ranking</span>
+      ${ranked.length ? `<b style="color:var(--mark);font-size:12px">今週は ${Math.max(ranked.length, rank)}週中 ${rank}位</b>` : ""}</div>
+      ${ranked.length ? "" : `<p class="muted" style="font-size:13px">聴いた週がここに並びます</p>`}
+      ${ranked.slice(0, 10).map(([k, v], n) => `<div class="r${k === thisW ? " me" : ""}"><span class="n" style="color:${n ? "var(--ink)" : "var(--mark)"}">${n + 1}</span><span style="flex:1">${k === thisW ? "今週" : md(k) + " の週"}</span><span>${v}分</span></div>`).join("")}</div>`);
+}
+
+// Keyboard
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === "Escape") { if ($("#sheet").classList.contains("open")) closeSheet(); else if ($("#player").classList.contains("open")) closePlayer(); return; }
+  if (!$("#player").classList.contains("open") || !P.track) return;
+  const k = e.key.toLowerCase();
+  if (k === " ") { e.preventDefault(); toggle(); }
+  else if (k === "arrowleft") { e.preventDefault(); prevSentence(); }
+  else if (k === "arrowright") { e.preventDefault(); nextSentence(); }
+  else if (k === "arrowup") { e.preventDefault(); shiftMode(-1); }
+  else if (k === "arrowdown") { e.preventDefault(); shiftMode(1); }
+  else if (k === "f" && !P.review) flagCurrent();
+  else if (k === "r") toggleRepeat();
+  else if (P.review && P.hold === "grade" && (k === "1" || k === "2")) gradeReview(k === "2");
+});
+A.addEventListener("play", renderControls); A.addEventListener("pause", renderControls);
+document.addEventListener("visibilitychange", () => { if (document.hidden) { savePos(); schedulePush(0); } else syncNow(); });
+if ("mediaSession" in navigator) {
+  navigator.mediaSession.setActionHandler("play", () => doPlay());
+  navigator.mediaSession.setActionHandler("pause", () => doPause());
+  navigator.mediaSession.setActionHandler("nexttrack", () => nextSentence());
+  navigator.mediaSession.setActionHandler("previoustrack", () => prevSentence());
+}
+
+async function boot() {
+  render();
+  try { await loadContent(); } catch (e) { toast("読み込めませんでした: " + e.message); }
+  render();
+  syncNow();
+  const last = store.get("last", null);
+  for (const s of speeches) { const k = s.tracks.findIndex(t => t.id === last); if (k >= 0) { P.speech = s; P.trackIndex = k; } }
+}
+boot();
+</script>
+</body>
+</html>
