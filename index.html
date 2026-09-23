@@ -42,6 +42,16 @@ a { color: var(--accent); }
 .num { font-family: var(--serif); font-size: 30px; line-height: 1; }
 .unit { font-family: var(--serif); font-size: 12px; color: var(--soft); margin-left: 4px; }
 
+.search { width: 100%; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line);
+  background: #fffaf0; font: inherit; margin-bottom: 14px; }
+.hit { display: block; width: 100%; text-align: left; padding: 12px 18px; background: color-mix(in srgb, var(--panel) 55%, transparent);
+  border-bottom: 1px solid var(--line); }
+.hit:hover { background: color-mix(in srgb, var(--panel) 85%, transparent); }
+.hit .where { font-size: 11px; color: var(--mark); }
+.hit .en { font-family: var(--serif); font-size: 16px; margin: 2px 0; }
+.hit .ja { font-size: 12px; color: var(--soft); }
+mark { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--ink); border-radius: 3px; }
+
 /* Lists */
 .list { border-radius: 14px; overflow: hidden; }
 .item { display: block; width: 100%; text-align: left; padding: 14px 18px; background: color-mix(in srgb, var(--panel) 55%, transparent);
@@ -429,6 +439,8 @@ function render() {
   if (!speeches.length) { app.innerHTML = `<div class="wrap"><h1>Orator</h1><p class="muted">読み込み中…</p></div>`; return; }
   const m = route.match(/^#\/s\/(.+)$/);
   app.innerHTML = m ? speechView(decodeURIComponent(m[1])) : libraryView();
+  const q = document.getElementById("q");
+  if (q && query) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
 }
 function renderSetup(app) {
   app.innerHTML = `<div class="setup card">
@@ -453,8 +465,52 @@ function statsCard() {
     <button onclick="openReview()"><span class="caps"><span class="flag">⚑</span> REVIEW TODAY</span><span><span class="num">${dueMarks().length}</span><span class="unit">sentences</span></span></button>
   </div>`;
 }
+let query = store.get("query", "");
+function onSearch(v) {
+  const wasEmpty = !query.trim();
+  query = v; store.set("query", v);
+  if (wasEmpty !== !v.trim()) return render();   // switch between the library and results
+  const box = document.getElementById("results");
+  if (box) box.innerHTML = resultsHTML();
+}
+function searchHits() {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const out = [];
+  for (const s of speeches) for (const [k, t] of s.tracks.entries()) for (const [i, x] of t.sentences.entries()) {
+    const where = x.en.toLowerCase().includes(q) ? "en" : x.ja.toLowerCase().includes(q) ? "ja"
+      : (x.notes || []).some(n => (n.head + n.body).toLowerCase().includes(q)) ? "note" : null;
+    if (!where) continue;
+    out.push({ s, k, i, x, where });
+    if (out.length >= 200) return out;
+  }
+  return out;
+}
+function hl(text) {
+  const q = query.trim();
+  if (!q) return esc(text);
+  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+  return esc(text).replace(new RegExp(re.source, "gi"), m => `<mark>${m}</mark>`);
+}
+function resultsHTML() {
+  if (!query.trim()) return "";
+  const hits = searchHits();
+  if (!hits.length) return `<p class="muted" style="padding:8px 4px">見つかりませんでした</p>`;
+  return `<div class="muted" style="font-size:12px;margin:0 4px 6px">${hits.length} 件</div><div class="list">${hits.map(h =>
+    `<button class="hit" onclick="jumpTo('${esc(h.s.tracks[h.k].id)}',${h.i})">
+      <div class="where">${esc(h.s.title)} · ${h.k + 1}. ${esc(h.s.tracks[h.k].titleJa)}${h.where === "note" ? " · 解説に一致" : ""}</div>
+      <div class="en">${hl(h.x.en)}</div><div class="ja">${hl(h.x.ja)}</div></button>`).join("")}</div>`;
+}
 function libraryView() {
-  return `<div class="wrap"><h1>Orator</h1>${statsCard()}<div class="list">${speeches.map(s => {
+  if (query.trim()) {
+    return `<div class="wrap"><h1>Orator</h1>
+      <input class="search" id="q" placeholder="英文・日本語・解説を検索" value="${esc(query)}" oninput="onSearch(this.value)">
+      <div id="results">${resultsHTML()}</div></div>`;
+  }
+  return `<div class="wrap"><h1>Orator</h1>
+    <input class="search" id="q" placeholder="英文・日本語・解説を検索" value="${esc(query)}" oninput="onSearch(this.value)">
+    <div id="results"></div>
+    ${statsCard()}<div class="list">${speeches.map(s => {
     const total = s.tracks.reduce((a, t) => a + t.duration, 0);
     const done = s.tracks.filter(t => store.get("done." + t.id, false)).length;
     return `<a class="item" href="#/s/${encodeURIComponent(s.id)}" style="text-decoration:none;color:inherit">
