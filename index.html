@@ -134,11 +134,68 @@ mark { background: color-mix(in srgb, var(--accent) 20%, transparent); color: va
   padding: 8px 14px; border-radius: 10px; font-size: 13px; opacity: 0; transition: opacity .2s; z-index: 30; pointer-events: none; }
 .toast.show { opacity: .92; }
 .kbd { font-size: 11px; color: var(--soft); margin-top: 18px; line-height: 1.8; }
+/* Books (Japanese RSVP) */
+.pbar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+.pbar > i { display: block; height: 100%; background: var(--accent); }
+.seg { display: flex; background: var(--panel); border-radius: 9px; padding: 2px; margin: 10px 0; }
+.seg button { flex: 1; padding: 6px 0; font-size: 13px; border-radius: 7px; }
+.seg button.on { background: var(--paper); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.sum { font-size: 15px; line-height: 1.9; padding: 16px 18px; }
+.bigbtn { display: block; width: 100%; padding: 14px; font-size: 16px; margin: 14px 0; }
+#reader { position: fixed; inset: 0; background: var(--paper); display: none; flex-direction: column; z-index: 12;
+  --name: #7A6412; --jserif: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", serif; }
+#reader.open { display: flex; }
+.rtop { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.rtop select { flex: 1; min-width: 0; font: 600 14px var(--sans); color: var(--ink); background: transparent;
+  border: 1px solid transparent; border-radius: 6px; padding: 4px; }
+.rtop select:hover { border-color: var(--line); }
+.rkeys { font-size: 12px; color: var(--soft); white-space: nowrap; }
+#rstage { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  cursor: pointer; user-select: none; -webkit-user-select: none; }
+#rg1, #rg2 { position: absolute; background: var(--mark); opacity: .75; }
+#rstage:not(.vert) #rg1, #rstage:not(.vert) #rg2 { width: 2px; height: 14px; left: calc(50% - 1px); }
+#rstage:not(.vert) #rg1 { top: calc(50% - var(--fs) * .95); }
+#rstage:not(.vert) #rg2 { top: calc(50% + var(--fs) * .95 - 14px); }
+#rstage.vert #rg1, #rstage.vert #rg2 { height: 2px; width: 14px; top: calc(50% - 1px); }
+#rstage.vert #rg1 { left: calc(50% - var(--fs) * .95); }
+#rstage.vert #rg2 { left: calc(50% + var(--fs) * .95 - 14px); }
+#rstage.noguide #rg1, #rstage.noguide #rg2 { display: none; }
+#rword { font-family: var(--jserif); font-size: var(--fs); line-height: 1.2; white-space: nowrap; text-align: center; }
+#rstage.vert #rword { writing-mode: vertical-rl; text-orientation: upright; }
+#rword .nm { color: var(--name); font-weight: 700; }
+#rword.title { font-size: calc(var(--fs) * .6); white-space: normal; max-width: 80vw; line-height: 1.5; }
+#rstage.vert #rword.title { writing-mode: horizontal-tb; }
+#rlabel { position: absolute; left: 50%; transform: translateX(-50%); top: calc(50% + var(--fs) * .95 + 6px);
+  font: 700 14px var(--sans); color: var(--name); white-space: nowrap; }
+#rstage.vert #rlabel { top: auto; bottom: calc(50% - var(--fs) * .95 - 34px); }
+#rhint { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; font-size: 13px; color: var(--soft); }
+#rctx { max-height: 24vh; overflow: auto; padding: 0 18px 8px; font-family: var(--jserif); font-size: 15px; line-height: 1.9;
+  color: var(--faint); display: none; max-width: 900px; width: 100%; margin: 0 auto; }
+#rctx.on { display: block; }
+#rctx mark { background: none; color: var(--ink); border-bottom: 2px solid var(--mark); border-radius: 0; }
+.rfoot { background: var(--panel); padding: 6px 16px calc(8px + env(safe-area-inset-bottom)); }
+.rfoot-in { max-width: 900px; margin: 0 auto; }
+#rbar { padding: 7px 0; cursor: pointer; }
+#rbar > div { height: 4px; background: var(--line); border-radius: 2px; position: relative; }
+#rfill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 2px; width: 0; }
+.rmeta { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--soft);
+  font-variant-numeric: tabular-nums; margin-bottom: 8px; }
+.rrow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 13px; margin-bottom: 8px; }
+.rrow label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.rrow select { font: 13px var(--sans); padding: 4px 6px; border-radius: 7px; border: 1px solid var(--line); background: #fffaf0; color: var(--ink); }
+.rrow input[type=range] { accent-color: var(--accent); width: 120px; }
+.rrow input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+.rrow .val { min-width: 62px; font-variant-numeric: tabular-nums; }
+.rplay { background: var(--accent); color: var(--paper); border-radius: 10px; padding: 8px 16px; font-weight: 600; min-width: 92px; }
+.rmore { display: none; }
+@media (max-width: 700px) { .rkeys { display: none; } .rrow input[type=range] { width: 90px; }
+  .rmore { display: inline-block; } .rrow.opt:not(.show) { display: none; } }
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div id="player"></div>
+<div id="reader"></div>
 <div id="sheet"><div class="body"></div></div>
 <div class="toast" id="toast"></div>
 <audio id="audio" preload="auto"></audio>
@@ -187,25 +244,32 @@ function b64utf8(str) { const bytes = new TextEncoder().encode(str); let bin = "
 function utf8b64(b64) { const bin = atob(b64.replace(/\s/g, "")); return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))); }
 
 // ---------- Content ----------
-let speeches = [];
-async function loadContent() {
+let speeches = [], books = [];
+// Cached JSON from the content repo. Default: network first, last copy when offline.
+// With `key` (a versioned name for a big file): cache first, so book.json downloads once per version.
+async function contentJSON(path, key) {
   const cache = await caches.open("orator-json").catch(() => null);
-  async function json(path) {
-    try {
-      const r = await gh(CONTENT_REPO, path, { raw: true });
-      if (!r.ok) throw new Error(r.status);
-      const text = await r.text();
-      cache?.put("/" + path, new Response(text));
-      return JSON.parse(text);
-    } catch (e) {  // offline: last copy
-      const hit = await cache?.match("/" + path);
-      if (hit) return JSON.parse(await hit.text());
-      throw e;
-    }
+  if (key) { const hit = await cache?.match("/" + key); if (hit) return JSON.parse(await hit.text()); }
+  try {
+    const r = await gh(CONTENT_REPO, path, { raw: true });
+    if (!r.ok) throw new Error(r.status);
+    const text = await r.text();
+    cache?.put("/" + (key || path), new Response(text));
+    return JSON.parse(text);
+  } catch (e) {  // offline: last copy
+    const hit = await cache?.match("/" + path);
+    if (hit) return JSON.parse(await hit.text());
+    throw e;
   }
-  const index = await json("index.json");
-  const list = await Promise.all(index.speeches.map(async id => ({ ...(await json(`${id}/speech.json`)), folder: id })));
+}
+async function loadContent() {
+  const index = await contentJSON("index.json");
+  const [list, metas] = await Promise.all([
+    Promise.all(index.speeches.map(async id => ({ ...(await contentJSON(`${id}/speech.json`)), folder: id }))),
+    Promise.all((index.books || []).map(id => contentJSON(`books/${id}/meta.json`).catch(() => null))),
+  ]);
   speeches = list.sort((a, b) => (a.order ?? 99) - (b.order ?? 99) || a.id.localeCompare(b.id));
+  books = metas.filter(Boolean).sort((a, b) => (a.order ?? 99) - (b.order ?? 99) || a.id.localeCompare(b.id));
 }
 const audioURLs = {};
 async function audioURL(speech, track) {
@@ -228,7 +292,7 @@ async function audioURL(speech, track) {
 // ---------- Journal (same shape and merge as App/Journal.swift) ----------
 const device = () => "web-" + store.get("device", "mac");
 let J = store.get("journal", { updatedAt: "", marks: {}, listening: {}, passes: {}, relisten: {} });
-J.relisten ||= {};
+J.relisten ||= {}; J.reading ||= {}; J.readMax ||= {};
 const nowISO = () => new Date().toISOString();
 function merged(a, b) {
   const out = JSON.parse(JSON.stringify(a));
@@ -236,6 +300,10 @@ function merged(a, b) {
   for (const [id, p] of Object.entries(b.passes || {})) if ((out.passes[id]?.at || "") < p.at) out.passes[id] = p;
   out.relisten ||= {};
   for (const [id, r] of Object.entries(b.relisten || {})) if ((out.relisten[id]?.at || "") < r.at) out.relisten[id] = r;
+  // Books: reading position per book (latest `at` wins), furthest offset per chapter (larger wins).
+  out.reading ||= {}; out.readMax ||= {};
+  for (const [id, r] of Object.entries(b.reading || {})) if ((out.reading[id]?.at || "") < (r?.at || "")) out.reading[id] = r;
+  for (const [k, n] of Object.entries(b.readMax || {})) out.readMax[k] = Math.max(+n || 0, out.readMax[k] || 0);
   for (const [dev, days] of Object.entries(b.listening || {})) {
     if (dev === device()) continue;
     out.listening[dev] ||= {};
@@ -432,13 +500,15 @@ function replayReview() { P.reviewPlayed = Math.max(0, P.reviewRepeats - 1); pla
 
 // ---------- Views ----------
 let route = location.hash || "#/";
-window.addEventListener("hashchange", () => { route = location.hash || "#/"; render(); });
+window.addEventListener("hashchange", () => { route = location.hash || "#/"; render(); if (route.startsWith("#/b/")) window.scrollTo(0, 0); });
 function render() {
   const app = $("#app");
   if (!token()) return renderSetup(app);
   if (!speeches.length) { app.innerHTML = `<div class="wrap"><h1>Orator</h1><p class="muted">読み込み中…</p></div>`; return; }
-  const m = route.match(/^#\/s\/(.+)$/);
-  app.innerHTML = m ? speechView(decodeURIComponent(m[1])) : libraryView();
+  const m = route.match(/^#\/s\/(.+)$/), bm = route.match(/^#\/b\/([^/]+)(?:\/(.+))?$/);
+  app.innerHTML = m ? speechView(decodeURIComponent(m[1]))
+    : bm ? (bm[2] ? chapterView(decodeURIComponent(bm[1]), decodeURIComponent(bm[2])) : bookView(decodeURIComponent(bm[1])))
+    : libraryView();
   const q = document.getElementById("q");
   if (q && query) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
 }
@@ -519,6 +589,7 @@ function libraryView() {
       ${s.titleJa ? `<div style="font-size:15px;color:var(--soft)">${esc(s.titleJa)}</div>` : ""}
       <div class="muted" style="font-size:12px;margin-top:3px">${s.tracks.length}トラック · ${Math.floor(total / 60)}分${done ? ` · ${done}/${s.tracks.length} 済` : ""}</div></a>`;
   }).join("")}</div>
+  ${booksSection()}
   <div class="kbd">キー操作：Space 再生/停止 · ←→ 前/次の文 · ↑↓ 表示切替 · F 🚩 · R 1文リピート · 復習中 1=まだ 2=聴けた · Esc 閉じる</div>
   <div class="kbd"><button onclick="resetToken()" style="text-decoration:underline">トークンを入れ直す</button> · 端末名: ${esc(store.get("device", "mac"))}</div></div>`;
 }
@@ -743,8 +814,321 @@ function openHistory() {
       ${ranked.slice(0, 10).map(([k, v], n) => `<div class="r${k === thisW ? " me" : ""}"><span class="n" style="color:${n ? "var(--ink)" : "var(--mark)"}">${n + 1}</span><span style="flex:1">${k === thisW ? "今週" : md(k) + " の週"}</span><span>${v}分</span></div>`).join("")}</div>`);
 }
 
+// ---------- Books: Japanese RSVP speed reading ----------
+// meta.json (contents, chars, summaries) loads with the library; book.json (pre-segmented bunsetsu) only when reading.
+// Position syncs through orator.json: reading[book] = {ch, off, at}, readMax["book/chapter"] = furthest offset.
+const chLabel = c => c.title.split("：")[0].replace(/（.*$/, "");
+const man = n => n >= 10000 ? `${(n / 10000).toFixed(1)}万字` : `${n.toLocaleString()}字`;
+const hm = m => m >= 60 ? `${Math.floor(m / 60)}時間${Math.round(m % 60)}分` : `${Math.round(m)}分`;
+const pct = f => Math.floor(Math.min(1, Math.max(0, f)) * 100);
+function bookProgress(meta) {
+  const r = J.reading?.[meta.id]; if (!r) return null;
+  const k = meta.chapters.findIndex(c => c.id === r.ch); if (k < 0) return null;
+  let before = 0; for (let j = 0; j < k; j++) before += meta.chapters[j].chars;
+  const ch = meta.chapters[k], off = Math.min(Math.max(0, r.off || 0), ch.chars);
+  return { k, ch, off, frac: (before + off) / meta.chars, chFrac: ch.chars ? off / ch.chars : 0 };
+}
+const chapterFrac = (meta, c) => c.chars ? Math.min(1, (J.readMax?.[`${meta.id}/${c.id}`] || 0) / c.chars) : 0;
+function booksSection() {
+  if (!books.length) return "";
+  return `<div class="caps" style="margin:26px 4px 8px">本 — 日本語で速読</div><div class="list">${books.map(b => {
+    const p = bookProgress(b);
+    return `<a class="item" href="#/b/${encodeURIComponent(b.id)}" style="text-decoration:none;color:inherit">
+      <div class="stitle">${esc(b.title)}</div><div style="font-size:14px;color:var(--soft)">${esc(b.subtitle)}</div>
+      <div class="pbar"><i style="width:${p ? pct(p.frac) : 0}%"></i></div>
+      <div class="muted" style="font-size:12px;margin-top:5px">${p ? `全体 ${pct(p.frac)}% · ${esc(chLabel(p.ch))}まで` : `${b.chapters.length}章 · ${man(b.chars)} · 未読`}</div></a>`;
+  }).join("")}</div>`;
+}
+function bookView(id) {
+  const b = books.find(x => x.id === id);
+  if (!b) return `<div class="wrap"><a class="back" href="#/">‹ Orator</a></div>`;
+  const p = bookProgress(b), rest = (b.chars * (1 - (p?.frac || 0))) / RS.speed;
+  return `<div class="wrap"><a class="back" href="#/">‹ Orator</a>
+    <h2 class="serif" style="margin:6px 4px 2px">${esc(b.title)}</h2><div class="muted" style="margin:0 4px 10px;font-size:13px">${esc(b.subtitle)}</div>
+    <div style="margin:0 4px"><div class="pbar"><i style="width:${p ? pct(p.frac) : 0}%"></i></div>
+      <div class="muted" style="font-size:12px;margin-top:5px">全体 ${p ? pct(p.frac) : 0}% · ${man(b.chars)} · 残り 約${hm(rest)}（${RS.speed}字/分）</div></div>
+    <button class="btn solid bigbtn" onclick="resumeBook('${esc(b.id)}')">${p ? `続きから読む（${esc(chLabel(p.ch))} ${pct(p.chFrac)}%）` : "最初から読む"}</button>
+    <div class="list">${b.chapters.map(c => {
+      const f = chapterFrac(b, c), cur = p?.ch.id === c.id;
+      return `<a class="item row" href="#/b/${encodeURIComponent(b.id)}/${encodeURIComponent(c.id)}" style="display:flex;text-decoration:none;color:inherit">
+        <span style="flex:1"><div style="font-weight:${cur ? 600 : 400};color:${cur ? "var(--mark)" : "inherit"}">${esc(c.title)}</div>
+        <div class="muted" style="font-size:12px">${man(c.chars)}${cur ? ` · 読書中（${pct(p.chFrac)}%の位置）` : ""}</div></span>
+        <span style="font-size:12px;text-align:right;color:${f >= 0.98 ? "var(--accent)" : "var(--soft)"}">${f >= 0.98 ? "✓" : f > 0.005 ? pct(f) + "%" : ""}</span></a>`;
+    }).join("")}</div></div>`;
+}
+let sumLevel = store.get("sumLevel", "mid");
+function chapterView(id, chId) {
+  const b = books.find(x => x.id === id), k = b ? b.chapters.findIndex(c => c.id === chId) : -1;
+  if (k < 0) return `<div class="wrap"><a class="back" href="#/b/${encodeURIComponent(id)}">‹ 戻る</a></div>`;
+  const c = b.chapters[k], f = chapterFrac(b, c), p = bookProgress(b), cur = p?.ch.id === c.id;
+  const levels = [["short", "超簡素"], ["mid", "要約"], ["long", "詳細"]];
+  const nav = (j, label) => b.chapters[j] ? `<a class="btn" href="#/b/${encodeURIComponent(b.id)}/${encodeURIComponent(b.chapters[j].id)}" style="text-decoration:none">${label}</a>` : "<span></span>";
+  return `<div class="wrap"><a class="back" href="#/b/${encodeURIComponent(b.id)}">‹ ${esc(b.title)}</a>
+    <h2 class="serif" style="margin:6px 4px 2px">${esc(c.title)}</h2>
+    <div class="muted" style="margin:0 4px;font-size:12px">${man(c.chars)} · 約${hm(c.chars / RS.speed)}${f >= 0.98 ? " · ✓ 読了" : f > 0.005 ? ` · ${pct(f)}% まで読んだ` : ""}</div>
+    ${c.summary ? `<div class="seg">${levels.map(([l, t]) => `<button class="${sumLevel === l ? "on" : ""}" onclick="sumLevel='${l}';store.set('sumLevel','${l}');render()">${t}</button>`).join("")}</div>
+      <div class="card sum">${esc(c.summary[sumLevel] || c.summary.mid || "").replace(/\n/g, "<br>")}</div>` : ""}
+    <button class="btn solid bigbtn" onclick="readChapter('${esc(b.id)}',${k})">${cur && p.off > 0 ? `この章を続きから読む（${pct(p.chFrac)}%）` : "この章を読む"}</button>
+    <div class="row" style="justify-content:space-between">${nav(k - 1, "‹ 前の章")}${nav(k + 1, "次の章 ›")}</div></div>`;
+}
+function resumeBook(id) { const b = books.find(x => x.id === id), p = bookProgress(b); openReader(id, p?.k ?? 0, p?.off ?? 0); }
+function readChapter(id, k) { const b = books.find(x => x.id === id), p = bookProgress(b); openReader(id, k, p?.k === k ? p.off : 0); }
+
+// Reader state and settings (same defaults as books/rsvp/index.html)
+const RS = Object.assign({ speed: 800, group: 1, minc: 3, font: 56, punct: true, nameColor: true, labelMode: 3, nameSlow: true, vert: false, guide: true, ctx: false }, store.get("rsvp", {}));
+const R = { meta: null, data: null, names: [], ch: 0, before: [], toks: [], i: 0, playing: false, timer: null, titleCard: false, labelCount: {}, saved: 0, wake: null };
+const RE_SENT = /[。！？!?]」?』?）?$/;
+const charLen = s => s.replace(/[、。，．！？!?…‥「」『』（）()\[\]［］【】〈〉《》：；・\s,.]/g, "").length;
+const KATA = /[ァ-ヺー・]/;
+const readerOpen = () => $("#reader").classList.contains("open");
+async function loadBookData(meta) {
+  const path = `books/${meta.id}/book.json`, key = `${path}?v=${meta.chars}-${meta.chapters.length}`;
+  const data = await contentJSON(path, key);
+  caches.open("orator-json").then(async c => { for (const req of await c.keys()) {   // drop older versions
+    const u = new URL(req.url); if (u.pathname === "/" + path && u.search && "/" + path + u.search !== "/" + key) c.delete(req); } }).catch(() => {});
+  return data;
+}
+function rTokenize(chData) {  // join pre-segmented bunsetsu to the まとめる / 最小 settings
+  const res = []; let off = 0;
+  chData.paras.forEach((p, pi) => {
+    const merged = []; let buf = "", cnt = 0;
+    for (const b of p) {
+      buf += b; cnt++;
+      if ((charLen(buf) >= RS.minc && cnt >= RS.group) || RE_SENT.test(buf)) { merged.push(buf); buf = ""; cnt = 0; }
+    }
+    if (buf) { if (merged.length && charLen(buf) < RS.minc) merged[merged.length - 1] += buf; else merged.push(buf); }
+    merged.forEach((t, k) => { res.push({ t, para: pi, off, len: charLen(t), paraEnd: k === merged.length - 1 }); off += t.length; });
+  });
+  return res;
+}
+function findNames(t) {
+  const hits = [];
+  for (const n of R.names) {
+    let from = 0, at;
+    while ((at = t.indexOf(n.name, from)) !== -1) {
+      const end = at + n.name.length, before = t[at - 1] || "", after = t[end] || "";
+      const ok = !KATA.test(n.name[0]) || (!KATA.test(before) && (after === "・" || !KATA.test(after)));
+      if (ok && !hits.some(h => at < h.end && end > h.at)) hits.push({ at, end, n });
+      from = at + 1;
+    }
+  }
+  return hits.sort((a, b) => a.at - b.at);
+}
+const tokAt = off => { let k = 0; while (k + 1 < R.toks.length && R.toks[k + 1].off <= off) k++; return k; };
+const setText = (el, s) => { if (el && el.textContent !== s) el.textContent = s; };
+
+function buildReader() {
+  if ($("#rword")) return;
+  const opt = (v, t) => v.map((x, k) => `<option value="${x}">${t[k]}</option>`).join("");
+  $("#reader").innerHTML = `<div class="rtop"><button class="btn" id="rclose">⌄ 閉じる</button><select id="rch" aria-label="章"></select>
+      <span class="rkeys">Space 再生/停止 · ←→ 1文節 · Shift+←→ 段落 · ↑↓ 速度 · V 縦横 · C 文脈</span></div>
+    <div id="rstage"><div id="rg1"></div><div id="rg2"></div><div id="rword"></div><div id="rlabel"></div><div id="rhint"></div></div>
+    <div id="rctx"></div>
+    <div class="rfoot"><div class="rfoot-in">
+      <div id="rbar"><div><div id="rfill"></div></div></div>
+      <div class="rmeta"><span id="rpos"></span><span id="rrem"></span></div>
+      <div class="rrow">
+        <button id="rrestart" class="btn" title="章の先頭へ">⏮</button><button id="rplay" class="rplay">▶ 再生</button>
+        <label>速度 <input type="range" id="rspeed" min="300" max="3000" step="50"><span class="val" id="rspeedv"></span></label>
+        <button class="btn rmore" id="rmore">表示設定</button>
+      </div>
+      <div class="rrow opt">
+        <label>まとめる <select id="rgroup">${opt([1, 2, 3], ["1文節ずつ", "2文節ずつ", "3文節ずつ"])}</select></label>
+        <label>最小 <select id="rminc">${opt([1, 2, 3, 4, 5], ["1字以上", "2字以上", "3字以上", "4字以上", "5字以上"])}</select></label>
+        <label>文字 <input type="range" id="rfont" min="32" max="96" step="2"><span class="val" id="rfontv"></span></label>
+        <label><input type="checkbox" id="rpunct"> 句読点で間をとる</label>
+      </div>
+      <div class="rrow opt">
+        <label><input type="checkbox" id="rnameColor"> 名前を色分け</label>
+        <label>人物ラベル <select id="rlabelMode">${opt([3, 1, 999, 0], ["章の最初3回", "章の最初1回", "毎回", "表示しない"])}</select></label>
+        <label><input type="checkbox" id="rnameSlow"> 名前で少し長く</label>
+        <label><input type="checkbox" id="rvert"> 縦表示</label>
+        <label><input type="checkbox" id="rguide"> 注視点ガイド</label>
+        <label><input type="checkbox" id="rctxOn"> 文脈表示</label>
+      </div></div></div>`;
+  $("#rclose").onclick = closeReader;
+  $("#rplay").onclick = e => { e.currentTarget.blur(); rToggle(); };
+  $("#rrestart").onclick = e => { e.currentTarget.blur(); rPause(); rSeek(0); R.titleCard = true; rShow(); };
+  $("#rmore").onclick = () => document.querySelectorAll(".rrow.opt").forEach(r => r.classList.toggle("show"));
+  $("#rstage").onclick = rToggle;
+  $("#rbar").onclick = e => { const r = e.currentTarget.getBoundingClientRect(), target = (e.clientX - r.left) / r.width * R.meta.chapters[R.ch].chars;
+    const k = R.toks.findIndex(t => t.off >= target); rSeek(k < 0 ? R.toks.length - 1 : k); };
+  $("#rch").onchange = e => { const was = R.playing; rPause(); rLoadChapter(+e.target.value, 0); if (was) rPlay(); };
+  $("#rspeed").oninput = e => setRS("speed", +e.target.value);
+  $("#rfont").oninput = e => setRS("font", +e.target.value);
+  $("#rgroup").onchange = e => setRS("group", +e.target.value, true);
+  $("#rminc").onchange = e => setRS("minc", +e.target.value, true);
+  $("#rlabelMode").onchange = e => setRS("labelMode", +e.target.value);
+  for (const k of ["punct", "nameColor", "nameSlow", "vert", "guide"]) $("#r" + k).onchange = e => setRS(k, e.target.checked);
+  $("#rctxOn").onchange = e => setRS("ctx", e.target.checked);
+  window.addEventListener("resize", () => { if (readerOpen()) rFit(); });
+}
+function applyRS() {
+  $("#rspeed").value = RS.speed; $("#rspeedv").textContent = RS.speed + "字/分";
+  $("#rfont").value = RS.font; $("#rfontv").textContent = RS.font + "px";
+  $("#rgroup").value = RS.group; $("#rminc").value = RS.minc; $("#rlabelMode").value = RS.labelMode;
+  for (const k of ["punct", "nameColor", "nameSlow", "vert", "guide"]) $("#r" + k).checked = RS[k];
+  $("#rctxOn").checked = RS.ctx;
+  const st = $("#rstage"); st.style.setProperty("--fs", RS.font + "px");
+  st.classList.toggle("vert", RS.vert); st.classList.toggle("noguide", !RS.guide);
+  $("#rctx").classList.toggle("on", RS.ctx);
+}
+function setRS(k, v, retok) {
+  RS[k] = v; store.set("rsvp", RS); applyRS();
+  if (!R.toks.length) return;
+  if (retok) { const off = R.toks[R.i].off; R.toks = rTokenize(R.data.chapters[R.ch]); R.labelCount = {}; R.i = tokAt(off); }
+  rShow();
+}
+async function openReader(id, k, off) {
+  const meta = books.find(b => b.id === id); if (!meta) return;
+  buildReader(); applyRS();
+  $("#reader").classList.add("open");
+  if (R.meta?.id !== id || !R.data) {
+    rPause(); R.meta = meta; R.data = null; R.toks = [];
+    $("#rword").className = ""; $("#rword").textContent = "読み込み中…"; setText($("#rlabel"), ""); setText($("#rhint"), "");
+    try { R.data = await loadBookData(meta); } catch (e) { toast("本を読み込めませんでした: " + e.message); closeReader(); return; }
+    if (!readerOpen() || R.meta !== meta) return;
+    R.names = [...(R.data.names || [])].sort((a, b) => b.name.length - a.name.length);
+    const byId = Object.fromEntries(R.data.chapters.map(c => [c.id, c]));
+    R.data.chapters = meta.chapters.map(c => byId[c.id] || { id: c.id, paras: [] });   // align with the contents
+    R.before = []; let acc = 0; for (const c of meta.chapters) { R.before.push(acc); acc += c.chars; }
+    $("#rch").innerHTML = meta.chapters.map((c, j) => `<option value="${j}">${esc(c.title)}（${(c.chars / 1000).toFixed(1)}千字）</option>`).join("");
+  }
+  rPause(); rLoadChapter(k, off);
+  setText($("#rhint"), "Space または画面クリックで再生");
+}
+function closeReader() {
+  if (R.playing) rPause(); else saveReading(3);
+  $("#reader").classList.remove("open");
+  render();
+}
+function rLoadChapter(k, off) {
+  R.ch = k; $("#rch").value = k; R.labelCount = {};
+  R.toks = rTokenize(R.data.chapters[k]);
+  R.i = off > 0 ? tokAt(off) : 0;
+  R.titleCard = R.i === 0;
+  rShow();
+}
+function rFit() {
+  const w = $("#rword"), st = $("#rstage");
+  w.style.fontSize = "";
+  const lim = RS.vert ? st.clientHeight * 0.9 : st.clientWidth * 0.94, size = RS.vert ? w.scrollHeight : w.scrollWidth;
+  if (size > lim) w.style.fontSize = Math.floor(RS.font * lim / size) + "px";
+}
+function rShow() {  // touches only the chunk, its label and the progress line
+  const w = $("#rword"); setText($("#rlabel"), "");
+  if (R.titleCard) { w.className = "title"; w.textContent = R.meta.chapters[R.ch].title; rFit(); rMeta(); return; }
+  w.className = "";
+  const tk = R.toks[R.i]; if (!tk) { w.textContent = ""; rMeta(); return; }
+  let html = esc(tk.t); const labels = [];
+  const hits = findNames(tk.t); tk.hasName = hits.length > 0;
+  if (hits.length) {
+    if (RS.nameColor) { html = ""; let p = 0;
+      for (const h of hits) { html += esc(tk.t.slice(p, h.at)) + `<span class="nm">${esc(tk.t.slice(h.at, h.end))}</span>`; p = h.end; }
+      html += esc(tk.t.slice(p)); }
+    for (const h of hits) {
+      const key = h.n.label + "|" + h.n.name, seen = (R.labelCount[key] ||= new Set());
+      seen.add(R.i);
+      if ([...seen].filter(x => x <= R.i).length <= RS.labelMode && h.n.label) labels.push(h.n.label);
+    }
+  }
+  w.innerHTML = html; setText($("#rlabel"), labels.join(" ／ "));
+  rFit(); rMeta(); rContext();
+}
+function rMeta() {
+  const ch = R.meta.chapters[R.ch], done = R.titleCard ? 0 : Math.min(R.toks[R.i]?.off ?? ch.chars, ch.chars);
+  setText($("#rpos"), `${done.toLocaleString()} / ${ch.chars.toLocaleString()}字 · 本全体 ${pct((R.before[R.ch] + done) / R.meta.chars)}%`);
+  const w = (ch.chars ? done / ch.chars * 100 : 0).toFixed(1) + "%"; if ($("#rfill").style.width !== w) $("#rfill").style.width = w;
+  const restCh = (ch.chars - done) / RS.speed, restBook = (R.meta.chars - R.before[R.ch] - done) / RS.speed;
+  const mmss = m => { const s = Math.round(m * 60); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+  setText($("#rrem"), `章の残り 約${mmss(restCh)} · 本の残り 約${hm(restBook)}`);
+}
+function rContext() {
+  if (!RS.ctx) return;
+  const tk = R.toks[R.i]; if (!tk) return;
+  let a = R.i, b = R.i; while (a > 0 && R.toks[a - 1].para === tk.para) a--; while (b + 1 < R.toks.length && R.toks[b + 1].para === tk.para) b++;
+  const box = $("#rctx"); let html = "";
+  for (let k = a; k <= b; k++) html += k === R.i ? `<mark>${esc(R.toks[k].t)}</mark>` : esc(R.toks[k].t);
+  box.innerHTML = html; box.querySelector("mark")?.scrollIntoView({ block: "nearest" });
+}
+function rDur(tk) {
+  let ms = Math.max(Math.max(tk.len, 1) / RS.speed * 60000, 90);
+  if (RS.punct) { if (RE_SENT.test(tk.t)) ms *= 1.9; else if (/[、，,：]$/.test(tk.t)) ms *= 1.35; }
+  if (tk.paraEnd) ms *= 1.5;
+  if (RS.nameSlow && tk.hasName) ms *= 1.25;
+  return ms;
+}
+function rStep() {  // one setTimeout per chunk, nothing else runs while reading
+  if (!R.playing) return;
+  if (R.titleCard) { R.titleCard = false; rShow(); R.timer = setTimeout(rStep, rDur(R.toks[R.i])); return; }
+  if (R.i < R.toks.length - 1) {
+    R.i++; rShow();
+    if (Date.now() - R.saved > 30000) saveReading(null);
+    R.timer = setTimeout(rStep, rDur(R.toks[R.i])); return;
+  }
+  chapterDone();
+  if (R.ch < R.meta.chapters.length - 1) { rLoadChapter(R.ch + 1, 0); saveReading(null); R.timer = setTimeout(rStep, 1800); return; }
+  rPause(); setText($("#rhint"), "この本を読み終えました");
+}
+function rPlay() {
+  if (R.playing || !R.toks.length) return;
+  R.playing = true; setText($("#rplay"), "❚❚ 停止"); setText($("#rhint"), "");
+  if (R.i >= R.toks.length - 1 && !R.titleCard) R.i = 0;
+  rShow(); R.saved = Date.now();
+  R.timer = setTimeout(rStep, R.titleCard ? 1500 : rDur(R.toks[R.i]));
+  navigator.wakeLock?.request("screen").then(l => { R.wake = l; }).catch(() => {});
+}
+function rPause() {
+  clearTimeout(R.timer);
+  if (!R.playing) return;
+  R.playing = false; setText($("#rplay"), "▶ 再生");
+  R.wake?.release().catch(() => {}); R.wake = null;
+  saveReading(3);
+  if (!R.titleCard) setText($("#rhint"), "Space または画面クリックで再生");
+}
+const rToggle = () => R.playing ? rPause() : rPlay();
+function rSeek(k) {
+  if (!R.toks.length) return;
+  R.titleCard = false; R.i = Math.max(0, Math.min(R.toks.length - 1, k)); rShow();
+  if (R.playing) { clearTimeout(R.timer); R.timer = setTimeout(rStep, rDur(R.toks[R.i]) + 250); }
+}
+function rParaStart(from, dir) {
+  const t = R.toks, p = t[from].para; let k = from;
+  if (dir < 0) { while (k > 0 && t[k - 1].para === p) k--; if (k === from && k > 0) { const pp = t[k - 1].para; while (k > 0 && t[k - 1].para === pp) k--; } return k; }
+  while (k < t.length - 1 && t[k].para === p) k++; return k;
+}
+// Progress: written locally on pause, close, chapter end and every 30 s while reading; pushed on pause/close only.
+function saveReading(pushAfter) {
+  if (!R.meta || !R.toks.length) return;
+  const id = R.meta.id, ch = R.meta.chapters[R.ch], off = R.titleCard ? 0 : R.toks[R.i].off, key = `${id}/${ch.id}`;
+  R.saved = Date.now();
+  const cur = J.reading[id];
+  if (cur && cur.ch === ch.id && cur.off === off && (J.readMax[key] || 0) >= off) return;   // nothing new
+  J.reading[id] = { ch: ch.id, off, at: nowISO() };
+  if ((J.readMax[key] || 0) < off) J.readMax[key] = off;
+  saveJ(pushAfter);
+}
+function chapterDone() {
+  const ch = R.meta.chapters[R.ch], key = `${R.meta.id}/${ch.id}`;
+  if ((J.readMax[key] || 0) < ch.chars) { J.readMax[key] = ch.chars; saveJ(null); }
+}
+function readerKey(e) {
+  if (e.key === "Escape") return closeReader();
+  if (e.code === "Space") { e.preventDefault(); rToggle(); }
+  else if (e.key === "ArrowRight") { e.preventDefault(); rSeek(e.shiftKey ? rParaStart(R.i, 1) : R.i + 1); }
+  else if (e.key === "ArrowLeft") { e.preventDefault(); rSeek(e.shiftKey ? rParaStart(R.i, -1) : R.i - 1); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); setRS("speed", Math.min(3000, RS.speed + 100)); }
+  else if (e.key === "ArrowDown") { e.preventDefault(); setRS("speed", Math.max(300, RS.speed - 100)); }
+  else if (e.key === "v" || e.key === "V") setRS("vert", !RS.vert);
+  else if (e.key === "c" || e.key === "C") setRS("ctx", !RS.ctx);
+}
+
 // Keyboard
 document.addEventListener("keydown", e => {
+  if (readerOpen()) {
+    if (e.target.tagName === "SELECT" || (e.target.tagName === "INPUT" && e.target.type !== "checkbox")) return;
+    return readerKey(e);
+  }
   if (e.target.tagName === "INPUT") return;
   if (e.key === "Escape") { if ($("#sheet").classList.contains("open")) closeSheet(); else if ($("#player").classList.contains("open")) closePlayer(); return; }
   if (!$("#player").classList.contains("open") || !P.track) return;
@@ -759,7 +1143,7 @@ document.addEventListener("keydown", e => {
   else if (P.review && P.hold === "grade" && (k === "1" || k === "2")) gradeReview(k === "2");
 });
 A.addEventListener("play", renderControls); A.addEventListener("pause", renderControls);
-document.addEventListener("visibilitychange", () => { if (document.hidden) { savePos(); schedulePush(0); } else syncNow(); });
+document.addEventListener("visibilitychange", () => { if (document.hidden) { savePos(); rPause(); saveReading(null); schedulePush(0); } else syncNow(); });
 if ("mediaSession" in navigator) {
   navigator.mediaSession.setActionHandler("play", () => doPlay());
   navigator.mediaSession.setActionHandler("pause", () => doPause());
