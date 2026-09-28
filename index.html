@@ -107,6 +107,12 @@ mark { background: color-mix(in srgb, var(--accent) 20%, transparent); color: va
 #rpage { display: none; flex: 1; overflow-y: auto; }
 #rpage.on { display: block; }
 #rpage .in { max-width: 680px; margin: 0 auto; padding: 12px 20px 80px; }
+/* 縦書き：右から左へ、列で送る */
+#rpage.vert { overflow-x: auto; overflow-y: hidden; }
+#rpage.vert .in { writing-mode: vertical-rl; text-orientation: upright; max-width: none; height: 100%;
+  padding: 24px 24px 24px 40px; columns: auto; }
+#rpage.vert p { margin: 0 0 1.4em; line-height: 1.9; }
+#rpage.vert h4 { margin: 0 0 1.2em; }
 #rpage h4 { font-family: "Hiragino Mincho ProN", serif; margin: 6px 0 14px; }
 #rpage p { font-family: "Hiragino Mincho ProN", serif; line-height: 1.95; margin: 0 0 1.1em; cursor: pointer; }
 #rpage p:hover { background: color-mix(in srgb, var(--panel) 60%, transparent); }
@@ -886,7 +892,7 @@ function resumeBook(id) { const b = books.find(x => x.id === id), p = bookProgre
 function readChapter(id, k) { const b = books.find(x => x.id === id), p = bookProgress(b); openReader(id, k, p?.k === k ? p.off : 0); }
 
 // Reader state and settings (same defaults as books/rsvp/index.html)
-const RS = Object.assign({ speed: 800, page: false, pfont: 19, pspeed: 600, srate: 1.0, group: 1, minc: 3, font: 56, punct: true, nameColor: true, labelMode: 3, nameSlow: true, vert: false, guide: true, ctx: false }, store.get("rsvp", {}));
+const RS = Object.assign({ speed: 800, page: false, pvert: false, pfont: 19, pspeed: 600, srate: 1.0, group: 1, minc: 3, font: 56, punct: true, nameColor: true, labelMode: 3, nameSlow: true, vert: false, guide: true, ctx: false }, store.get("rsvp", {}));
 const R = { meta: null, data: null, names: [], ch: 0, before: [], toks: [], i: 0, playing: false, timer: null, titleCard: false, labelCount: {}, saved: 0, wake: null };
 const RE_SENT = /[。！？!?]」?』?）?$/;
 const charLen = s => s.replace(/[、。，．！？!?…‥「」『』（）()\[\]［］【】〈〉《》：；・\s,.]/g, "").length;
@@ -967,7 +973,7 @@ function buildReader() {
     <div id="rpage"><div class="in"></div></div>
     <div id="rpfoot"><span id="rpleft"></span><span class="muted" id="rppace"></span><span style="flex:1"></span>
       <label class="muted">読み上げ速度 <input type="range" id="rsrate" min="0.7" max="2" step="0.05"></label>
-      <button class="btn" id="rspeak">🔊 読み上げ</button></div>
+      <button class="btn" id="rvertpage">縦</button><button class="btn" id="rspeak">🔊 読み上げ</button></div>
     <div class="rfoot"><div class="rfoot-in">
       <div id="rbar"><div><div id="rfill"></div></div></div>
       <div class="rmeta"><span id="rpos"></span><span id="rrem"></span></div>
@@ -1093,6 +1099,8 @@ function setPageMode(on) {
   $("#rsrate").value = RS.srate;
   $("#rsrate").oninput = e => { RS.srate = +e.target.value; store.set("rsvp", RS); };
   $("#rspeak").onclick = () => PG.speaking ? stopSpeak() : speakFrom(PG.seen);
+  $("#rvertpage").onclick = () => { RS.pvert = !RS.pvert; store.set("rsvp", RS); applyPageVert(); };
+  applyPageVert();
   // 段落が見えたら位置と速さを更新（IntersectionObserver：スクロール中に毎フレーム走らせない）
   const io = new IntersectionObserver(es => {
     for (const e of es) if (e.isIntersecting) pageAdvance(+e.target.dataset.k);
@@ -1100,10 +1108,25 @@ function setPageMode(on) {
   page.querySelectorAll("p").forEach(el => io.observe(el));
   pageFooter();
 }
+/// 縦書きに切り替える。位置は保ったまま、右から左へ読む形にする。
+function applyPageVert() {
+  const page = $("#rpage"); if (!page) return;
+  page.classList.toggle("vert", RS.pvert);
+  $("#rvertpage").textContent = RS.pvert ? "横" : "縦";
+  const el = page.querySelector(`p[data-k="${PG.seen}"]`);
+  if (!el) return;
+  if (RS.pvert) page.scrollLeft = el.offsetLeft - page.clientWidth + el.offsetWidth + 24;
+  else page.scrollTop = el.offsetTop - 12;
+}
+
 /// 画面のいちばん上にある段落の字位置（スクロール中は何もしない＝電池のため）。
 function topParagraph() {
   const page = $("#rpage"); if (!page) return null;
-  for (const el of page.querySelectorAll("p")) if (el.getBoundingClientRect().bottom > 90) return +el.dataset.off;
+  const vert = page.classList.contains("vert");
+  for (const el of page.querySelectorAll("p")) {
+    const r = el.getBoundingClientRect();
+    if (vert ? r.right < page.getBoundingClientRect().right + 8 && r.right > 60 : r.bottom > 90) return +el.dataset.off;
+  }
   return null;
 }
 
