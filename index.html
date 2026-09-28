@@ -103,6 +103,14 @@ mark { background: color-mix(in srgb, var(--accent) 20%, transparent); color: va
 .on-accent { color: var(--accent); }
 .dim { color: var(--faint); }
 
+/* 本：ふつうに読む */
+#rpage { display: none; flex: 1; overflow-y: auto; }
+#rpage.on { display: block; }
+#rpage .in { max-width: 680px; margin: 0 auto; padding: 12px 20px 80px; }
+#rpage h4 { font-family: "Hiragino Mincho ProN", serif; margin: 6px 0 14px; }
+#rpage p { font-family: "Hiragino Mincho ProN", serif; line-height: 1.95; margin: 0 0 1.1em; cursor: pointer; }
+#rpage p:hover { background: color-mix(in srgb, var(--panel) 60%, transparent); }
+
 /* Sheets */
 #sheet { position: fixed; inset: 0; background: rgba(0,0,0,.25); display: none; z-index: 20; align-items: flex-end; justify-content: center; }
 #sheet.open { display: flex; }
@@ -875,7 +883,7 @@ function resumeBook(id) { const b = books.find(x => x.id === id), p = bookProgre
 function readChapter(id, k) { const b = books.find(x => x.id === id), p = bookProgress(b); openReader(id, k, p?.k === k ? p.off : 0); }
 
 // Reader state and settings (same defaults as books/rsvp/index.html)
-const RS = Object.assign({ speed: 800, group: 1, minc: 3, font: 56, punct: true, nameColor: true, labelMode: 3, nameSlow: true, vert: false, guide: true, ctx: false }, store.get("rsvp", {}));
+const RS = Object.assign({ speed: 800, page: false, pfont: 19, group: 1, minc: 3, font: 56, punct: true, nameColor: true, labelMode: 3, nameSlow: true, vert: false, guide: true, ctx: false }, store.get("rsvp", {}));
 const R = { meta: null, data: null, names: [], ch: 0, before: [], toks: [], i: 0, playing: false, timer: null, titleCard: false, labelCount: {}, saved: 0, wake: null };
 const RE_SENT = /[。！？!?]」?』?）?$/;
 const charLen = s => s.replace(/[、。，．！？!?…‥「」『』（）()\[\]［］【】〈〉《》：；・\s,.]/g, "").length;
@@ -949,16 +957,17 @@ const setText = (el, s) => { if (el && el.textContent !== s) el.textContent = s;
 function buildReader() {
   if ($("#rword")) return;
   const opt = (v, t) => v.map((x, k) => `<option value="${x}">${t[k]}</option>`).join("");
-  $("#reader").innerHTML = `<div class="rtop"><button class="btn" id="rclose">⌄ 閉じる</button><select id="rch" aria-label="章"></select>
+  $("#reader").innerHTML = `<div class="rtop"><button class="btn" id="rclose">⌄ 閉じる</button><select id="rch" aria-label="章"></select><button class="btn" id="rmode">ふつう</button>
       <span class="rkeys">Space 再生/停止 · ←→ 1文節 · Shift+←→ 段落 · ↑↓ 速度 · V 縦横 · C 文脈</span></div>
     <div id="rstage"><div id="rg1"></div><div id="rg2"></div><div id="rword"></div><div id="rlabel"></div><div id="rhint"></div></div>
     <div id="rctx"></div>
+    <div id="rpage"><div class="in"></div></div>
     <div class="rfoot"><div class="rfoot-in">
       <div id="rbar"><div><div id="rfill"></div></div></div>
       <div class="rmeta"><span id="rpos"></span><span id="rrem"></span></div>
       <div class="rrow">
         <button id="rrestart" class="btn" title="章の先頭へ">⏮</button><button id="rplay" class="rplay">▶ 再生</button>
-        <label>速度 <input type="range" id="rspeed" min="300" max="3000" step="50"><span class="val" id="rspeedv"></span></label>
+        <label>速度 <input type="range" id="rspeed" min="300" max="6000" step="50"><span class="val" id="rspeedv"></span></label>
         <button class="btn rmore" id="rmore">表示設定</button>
       </div>
       <div class="rrow opt">
@@ -976,6 +985,7 @@ function buildReader() {
         <label><input type="checkbox" id="rctxOn"> 文脈表示</label>
       </div></div></div>`;
   $("#rclose").onclick = closeReader;
+  $("#rmode").onclick = () => setPageMode(!RS.page);
   $("#rplay").onclick = e => { e.currentTarget.blur(); rToggle(); };
   $("#rrestart").onclick = e => { e.currentTarget.blur(); rPause(); rSeek(0); R.titleCard = true; rShow(); };
   $("#rmore").onclick = () => document.querySelectorAll(".rrow.opt").forEach(r => r.classList.toggle("show"));
@@ -995,6 +1005,46 @@ function buildReader() {
     if (R.toks && Math.abs(fitUnits() - (R.fit || 0)) >= 0.5) setRS("font", RS.font, true); else rFit();
   });
 }
+/// ふつうに読む：章の本文をそのまま流す。位置は速読と共有し、段落をクリックするとそこから速読に戻る。
+function paragraphsOf() {
+  const out = []; let para = -1;
+  for (const t of R.toks) { if (t.para !== para) { out.push({ off: t.off, text: t.text }); para = t.para; } else out[out.length - 1].text += t.text; }
+  return out;
+}
+function setPageMode(on) {
+  RS.page = on; store.set("rsvp", RS);
+  const page = $("#rpage");
+  $("#rmode").textContent = on ? "速読" : "ふつう";
+  if (!on) {
+    const here = topParagraph();
+    page.classList.remove("on");
+    document.querySelector("#rstage").style.display = "";
+    document.querySelector(".rfoot").style.display = "";
+    if (here != null) { const k = R.toks.findIndex(t => t.off >= here); rSeek(k < 0 ? R.toks.length - 1 : k); }
+    return;
+  }
+  rPause();
+  const paras = paragraphsOf(), off = R.toks[R.i] ? R.toks[R.i].off : 0;
+  let here = 0; paras.forEach((p, k) => { if (p.off <= off) here = k; });
+  page.querySelector(".in").innerHTML = `<h4>${esc(R.meta.chapters[R.ch].title)}</h4>` +
+    paras.map((p, k) => `<p data-off="${p.off}" data-k="${k}" style="font-size:${RS.pfont}px">${esc(p.text)}</p>`).join("");
+  page.querySelectorAll("p").forEach(el => el.onclick = () => {
+    const k = R.toks.findIndex(t => t.off >= +el.dataset.off);
+    setPageMode(false); rSeek(k < 0 ? R.toks.length - 1 : k);
+  });
+  document.querySelector("#rstage").style.display = "none";
+  document.querySelector(".rfoot").style.display = "none";
+  page.classList.add("on");
+  const target = page.querySelector(`p[data-k="${here}"]`);
+  if (target) page.scrollTop = target.offsetTop - 12;
+}
+/// 画面のいちばん上にある段落の字位置（スクロール中は何もしない＝電池のため）。
+function topParagraph() {
+  const page = $("#rpage"); if (!page) return null;
+  for (const el of page.querySelectorAll("p")) if (el.getBoundingClientRect().bottom > 90) return +el.dataset.off;
+  return null;
+}
+
 function applyRS() {
   $("#rspeed").value = RS.speed; $("#rspeedv").textContent = RS.speed + "字/分";
   $("#rfont").value = RS.font; $("#rfontv").textContent = RS.font + "px";
@@ -1016,6 +1066,8 @@ async function openReader(id, k, off) {
   const meta = books.find(b => b.id === id); if (!meta) return;
   buildReader(); applyRS();
   $("#reader").classList.add("open");
+  if (RS.page) { RS.page = false; $("#rmode").textContent = "ふつう"; $("#rpage").classList.remove("on");
+                 $("#rstage").style.display = ""; document.querySelector(".rfoot").style.display = ""; }
   if (R.meta?.id !== id || !R.data) {
     rPause(); R.meta = meta; R.data = null; R.toks = [];
     $("#rword").className = ""; $("#rword").textContent = "読み込み中…"; setText($("#rlabel"), ""); setText($("#rhint"), "");
@@ -1030,7 +1082,15 @@ async function openReader(id, k, off) {
   rPause(); rLoadChapter(k, off);
   setText($("#rhint"), "Space または画面クリックで再生");
 }
+function savePagePosition() {
+  if (!RS.page) return;
+  const here = topParagraph();
+  if (here == null) return;
+  const k = R.toks.findIndex(t => t.off >= here);
+  rSeek(k < 0 ? R.toks.length - 1 : k);
+}
 function closeReader() {
+  savePagePosition();
   if (R.playing) rPause(); else saveReading(3);
   $("#reader").classList.remove("open");
   render();
