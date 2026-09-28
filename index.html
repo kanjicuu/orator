@@ -110,6 +110,9 @@ mark { background: color-mix(in srgb, var(--accent) 20%, transparent); color: va
 #rpage h4 { font-family: "Hiragino Mincho ProN", serif; margin: 6px 0 14px; }
 #rpage p { font-family: "Hiragino Mincho ProN", serif; line-height: 1.95; margin: 0 0 1.1em; cursor: pointer; }
 #rpage p:hover { background: color-mix(in srgb, var(--panel) 60%, transparent); }
+#rpage p.saying { color: var(--mark); }
+#rpfoot { display: none; align-items: center; gap: 12px; padding: 8px 20px; background: var(--panel); font-size: 12px; }
+#rpfoot.on { display: flex; }
 
 /* Sheets */
 #sheet { position: fixed; inset: 0; background: rgba(0,0,0,.25); display: none; z-index: 20; align-items: flex-end; justify-content: center; }
@@ -883,7 +886,7 @@ function resumeBook(id) { const b = books.find(x => x.id === id), p = bookProgre
 function readChapter(id, k) { const b = books.find(x => x.id === id), p = bookProgress(b); openReader(id, k, p?.k === k ? p.off : 0); }
 
 // Reader state and settings (same defaults as books/rsvp/index.html)
-const RS = Object.assign({ speed: 800, page: false, pfont: 19, group: 1, minc: 3, font: 56, punct: true, nameColor: true, labelMode: 3, nameSlow: true, vert: false, guide: true, ctx: false }, store.get("rsvp", {}));
+const RS = Object.assign({ speed: 800, page: false, pfont: 19, pspeed: 600, srate: 1.0, group: 1, minc: 3, font: 56, punct: true, nameColor: true, labelMode: 3, nameSlow: true, vert: false, guide: true, ctx: false }, store.get("rsvp", {}));
 const R = { meta: null, data: null, names: [], ch: 0, before: [], toks: [], i: 0, playing: false, timer: null, titleCard: false, labelCount: {}, saved: 0, wake: null };
 const RE_SENT = /[。！？!?]」?』?）?$/;
 const charLen = s => s.replace(/[、。，．！？!?…‥「」『』（）()\[\]［］【】〈〉《》：；・\s,.]/g, "").length;
@@ -962,6 +965,9 @@ function buildReader() {
     <div id="rstage"><div id="rg1"></div><div id="rg2"></div><div id="rword"></div><div id="rlabel"></div><div id="rhint"></div></div>
     <div id="rctx"></div>
     <div id="rpage"><div class="in"></div></div>
+    <div id="rpfoot"><span id="rpleft"></span><span class="muted" id="rppace"></span><span style="flex:1"></span>
+      <label class="muted">読み上げ速度 <input type="range" id="rsrate" min="0.7" max="2" step="0.05"></label>
+      <button class="btn" id="rspeak">🔊 読み上げ</button></div>
     <div class="rfoot"><div class="rfoot-in">
       <div id="rbar"><div><div id="rfill"></div></div></div>
       <div class="rmeta"><span id="rpos"></span><span id="rrem"></span></div>
@@ -1011,11 +1017,56 @@ function paragraphsOf() {
   for (const t of R.toks) { if (t.para !== para) { out.push({ off: t.off, text: t.text }); para = t.para; } else out[out.length - 1].text += t.text; }
   return out;
 }
+let PG = { seen: 0, seenOff: 0, at: 0, paras: [], speaking: false };
+function pageFooter() {
+  if (!RS.page) return;
+  const done = PG.paras[PG.seen] ? PG.paras[PG.seen].off : 0;
+  const ch = R.meta.chapters[R.ch];
+  const left = Math.max(0, ch.chars - done) / Math.max(RS.pspeed, 60);
+  const rest = R.meta.chapters.slice(R.ch + 1).reduce((n, c) => n + c.chars, 0);
+  const all = left + rest / Math.max(RS.pspeed, 60);
+  const t = m => m >= 60 ? `${Math.floor(m / 60)}時間${Math.round(m % 60)}分` : `${Math.round(m)}分`;
+  $("#rpleft").textContent = `この章 あと${t(left)}　本全体 あと${t(all)}`;
+  $("#rppace").textContent = `${Math.round(RS.pspeed)}字/分`;
+}
+/// 段落が画面に入るたび、実際の読む速さを測ってなだらかに更新する（タイマーなし）。
+function pageAdvance(k) {
+  if (k <= PG.seen || !PG.paras[k]) { PG.seen = Math.max(PG.seen, k); return; }
+  const chars = PG.paras[k].off - PG.seenOff, mins = (Date.now() - PG.at) / 60000;
+  if (!PG.speaking && chars > 40 && mins > 0.08 && mins < 10) {
+    RS.pspeed = RS.pspeed * 0.7 + Math.min(Math.max(chars / mins, 150), 3000) * 0.3;
+    store.set("rsvp", RS);
+  }
+  PG.seen = k; PG.seenOff = PG.paras[k].off; PG.at = Date.now(); pageFooter();
+}
+function speakFrom(k) {
+  const synth = window.speechSynthesis; if (!synth) return toast("この端末は読み上げに対応していません");
+  synth.cancel(); PG.speaking = true; $("#rspeak").textContent = "⏹ 停止";
+  const say = i => {
+    if (!PG.speaking || !PG.paras[i]) { stopSpeak(); return; }
+    document.querySelectorAll("#rpage p").forEach(el => el.classList.toggle("saying", +el.dataset.k === i));
+    const el = $("#rpage").querySelector(`p[data-k="${i}"]`);
+    if (el) $("#rpage").scrollTop = el.offsetTop - 120;
+    PG.seen = i; pageFooter(); saveReading(3);
+    const u = new SpeechSynthesisUtterance(PG.paras[i].text);
+    u.lang = "ja-JP"; u.rate = RS.srate;
+    u.onend = () => say(i + 1);
+    synth.speak(u);
+  };
+  say(k);
+}
+function stopSpeak() {
+  PG.speaking = false; window.speechSynthesis?.cancel();
+  const b = $("#rspeak"); if (b) b.textContent = "🔊 読み上げ";
+  document.querySelectorAll("#rpage p.saying").forEach(el => el.classList.remove("saying"));
+}
 function setPageMode(on) {
   RS.page = on; store.set("rsvp", RS);
   const page = $("#rpage");
   $("#rmode").textContent = on ? "速読" : "ふつう";
   if (!on) {
+    stopSpeak();
+    $("#rpfoot").classList.remove("on");
     const here = topParagraph();
     page.classList.remove("on");
     document.querySelector("#rstage").style.display = "";
@@ -1035,8 +1086,19 @@ function setPageMode(on) {
   document.querySelector("#rstage").style.display = "none";
   document.querySelector(".rfoot").style.display = "none";
   page.classList.add("on");
+  PG = { seen: here, seenOff: paras[here] ? paras[here].off : 0, at: Date.now(), paras, speaking: false };
   const target = page.querySelector(`p[data-k="${here}"]`);
   if (target) page.scrollTop = target.offsetTop - 12;
+  $("#rpfoot").classList.add("on");
+  $("#rsrate").value = RS.srate;
+  $("#rsrate").oninput = e => { RS.srate = +e.target.value; store.set("rsvp", RS); };
+  $("#rspeak").onclick = () => PG.speaking ? stopSpeak() : speakFrom(PG.seen);
+  // 段落が見えたら位置と速さを更新（IntersectionObserver：スクロール中に毎フレーム走らせない）
+  const io = new IntersectionObserver(es => {
+    for (const e of es) if (e.isIntersecting) pageAdvance(+e.target.dataset.k);
+  }, { root: page, threshold: 0.01 });
+  page.querySelectorAll("p").forEach(el => io.observe(el));
+  pageFooter();
 }
 /// 画面のいちばん上にある段落の字位置（スクロール中は何もしない＝電池のため）。
 function topParagraph() {
