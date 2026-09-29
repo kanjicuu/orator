@@ -15,6 +15,21 @@
   --serif: "Hoefler Text", "Iowan Old Style", Georgia, "Hiragino Mincho ProN", serif;
   --sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Helvetica Neue", sans-serif;
 }
+/* 夜の配色：暖かい黒地にクリームの字。就寝前に読んでもまぶしくない。 */
+:root[data-theme="dark"] {
+  --paper: #14110D; --panel: #1F1A14; --ink: #E8DFCD; --faint: rgba(232,223,205,.34);
+  --soft: rgba(232,223,205,.6); --line: rgba(232,223,205,.14);
+  --accent: #6FA98A; --mark: #C98494;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14110D; --panel: #1F1A14; --ink: #E8DFCD; --faint: rgba(232,223,205,.34);
+    --soft: rgba(232,223,205,.6); --line: rgba(232,223,205,.14);
+    --accent: #6FA98A; --mark: #C98494;
+  }
+}
+input, select, textarea { color-scheme: light dark; }
+
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); }
 body { -webkit-font-smoothing: antialiased; }
@@ -892,6 +907,20 @@ function resumeBook(id) { const b = books.find(x => x.id === id), p = bookProgre
 function readChapter(id, k) { const b = books.find(x => x.id === id), p = bookProgress(b); openReader(id, k, p?.k === k ? p.off : 0); }
 
 // Reader state and settings (same defaults as books/rsvp/index.html)
+/// 表示：auto（端末の設定に従う）／light／dark
+function theme() { return store.get("theme", "auto"); }
+function applyTheme() {
+  const t = theme();
+  if (t === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", t);
+  const b = document.getElementById("themeBtn");
+  if (b) b.textContent = { auto: "自動", light: "明るい", dark: "暗い" }[t];
+}
+function cycleTheme() {
+  const order = ["auto", "light", "dark"];
+  store.set("theme", order[(order.indexOf(theme()) + 1) % 3]);
+  applyTheme();
+}
 const RS = Object.assign({ speed: 800, page: false, pvert: false, pfont: 19, pspeed: 600, srate: 1.0, group: 1, minc: 3, font: 56, punct: true, nameColor: true, labelMode: 3, nameSlow: true, vert: false, guide: true, ctx: false }, store.get("rsvp", {}));
 const R = { meta: null, data: null, names: [], ch: 0, before: [], toks: [], i: 0, playing: false, timer: null, titleCard: false, labelCount: {}, saved: 0, wake: null };
 const RE_SENT = /[。！？!?]」?』?）?$/;
@@ -1330,6 +1359,7 @@ if ("mediaSession" in navigator) {
 }
 
 async function boot() {
+  applyTheme();
   render();
   try { await loadContent(); } catch (e) { toast("読み込めませんでした: " + e.message); }
   render();
